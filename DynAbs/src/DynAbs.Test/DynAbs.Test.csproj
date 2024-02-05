@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0-windows</TargetFramework>
+	  <UseWindowsForms>true</UseWindowsForms>
+    <GenerateProgramFile>false</GenerateProgramFile>
+    <StartupObject>DynAbs.Test.Cases.AliasingGlobal</StartupObject>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>1701;1702;CS0168;CS0169;CS0219;CS0162;CS0414</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NoWarn>1701;1702;CS0168;CS0169;CS0219;CS0162;CS0414</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.SDK" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DynAbs\DynAbs.csproj" />
+    <ProjectReference Include="..\ExternalLibraryExample\ExternalLibraryExample.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Suites\Solver\" />
+    <Folder Include="Suites\SummariesLanguage\" />
+  </ItemGroup>
+
+</Project>

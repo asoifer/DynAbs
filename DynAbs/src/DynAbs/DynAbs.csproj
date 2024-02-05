@@ -1,0 +1,73 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.2</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Tracing\EmbeddedResources\FileTracer.cs" />
+    <Compile Remove="Tracing\EmbeddedResources\PipeTracer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="DLLResources\DynAbs.Tracing.FileTraceClient.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\DynAbs.Tracing\FileTracerServer.cs" Link="Tracing\FileTracerServer.cs" />
+	<Compile Include="..\DynAbs.Tracing\PipeTracerServer.cs" Link="Tracing\PipeTracerServer.cs" />
+    <Compile Include="..\DynAbs.Tracing\ITraceReceiver.cs" Link="Tracing\ITraceReceiver.cs" />
+    <Compile Include="..\DynAbs.Tracing\ITracerServer.cs" Link="Tracing\ITracerServer.cs" />
+    <Compile Include="..\DynAbs.Tracing\LOTraceReceiver.cs" Link="Tracing\LOTraceReceiver.cs" />
+    <Compile Include="..\DynAbs.Tracing\StackTraceReceiver.cs" Link="Tracing\StackTraceReceiver.cs" />
+    <Compile Include="..\DynAbs.Tracing\TraceInfo.cs" Link="Tracing\TraceInfo.cs" />
+    <Compile Include="..\DynAbs.Tracing\TraceQueue.cs" Link="Tracing\TraceQueue.cs" />
+    <Compile Include="..\DynAbs.Tracing\TraceReceiver.cs" Link="Tracing\TraceReceiver.cs" />
+    <Compile Include="..\DynAbs.Tracing\TracerGlobals.cs" Link="Tracing\TracerGlobals.cs" />
+    <Compile Include="..\DynAbs.Tracing\TraceType.cs" Link="Tracing\TraceType.cs" />
+  </ItemGroup>  
+
+  <ItemGroup>
+    <EmbeddedResource Include="DLLResources\DynAbs.Tracing.FileTraceClient.dll" />
+    <EmbeddedResource Include="Tracing\EmbeddedResources\FileTracer.cs" />
+    <EmbeddedResource Include="Tracing\EmbeddedResources\PipeTracer.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4.Runtime" Version="4.6.6" />
+    <PackageReference Include="Microsoft.Build.Locator" Version="1.4.1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0-1.final" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.4.0-1.final" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="4.4.0-1.final" />
+    <PackageReference Include="protobuf-net" Version="3.1.4" />
+    <PackageReference Include="QuikGraph" Version="2.3.0" />
+    <PackageReference Include="QuikGraph.Graphviz" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Exceptions\ErrorMessages.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ErrorMessages.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Tracing\EmbeddedResources\FilesToInclude.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>FilesToInclude.tt</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Exceptions\ErrorMessages.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>ErrorMessages.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+  </ItemGroup>
+
+</Project>

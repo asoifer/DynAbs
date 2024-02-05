@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\DynAbs.Tracing\TraceInfo.cs" Link="Tracing\TraceInfo.cs" />
+	<Compile Include="..\DynAbs.Tracing\TraceType.cs" Link="Tracing\TraceType.cs" />
+	<Compile Include="..\DynAbs.Tracing\TracerGlobals.cs" Link="Tracing\TracerGlobals.cs" />
+	<Compile Include="..\DynAbs.Tracing\ITracerClient.cs" Link="Tracing\ITracerClient.cs" />
+	<Compile Include="..\DynAbs.Tracing\TraceSender.cs" Link="Tracing\TraceSender.cs" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="protobuf-net" Version="3.1.4" />
+  </ItemGroup>
+  
+</Project>
