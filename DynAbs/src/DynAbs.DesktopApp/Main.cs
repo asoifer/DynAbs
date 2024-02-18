@@ -85,7 +85,7 @@ namespace DynAbs.DesktopApp
                 result.Show();
             }
             else
-                MessageBox.Show("There is not sliced dependency graph loaded");
+                MessageBox.Show("There is not a sliced dependency graph loaded");
         }
 
         private void btnClean_Click(object sender, EventArgs e)

@@ -36,6 +36,8 @@ namespace DynAbs
             TypesOptimization = UseAnnotations;
             if (userConfiguration.FoldersToSkip != null)
                 FoldersToSkip = new HashSet<string>(userConfiguration.FoldersToSkip.Select(x => x.name));
+
+            Globals.generate_dgs = !string.IsNullOrWhiteSpace(userConfiguration?.results?.sliceDependenciesGraphFolder ?? "");
         }
     }
 }
