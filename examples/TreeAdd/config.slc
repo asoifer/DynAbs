@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<UserConfiguration xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <solutionFiles>
+    <solutionPath>.\examples\TreeAdd\src\TreeAdd.sln</solutionPath>
+	<compilationOutputFolder>.\examples\TreeAdd\output\instrumented</compilationOutputFolder>
+    <executableProject>TreeAdd</executableProject>
+	<MSBuildCompilation>false</MSBuildCompilation>
+  </solutionFiles>
+  <criteria>
+    <mode>Normal</mode>
+	<lines>
+		<FileLine>
+			<file>TreeAdd.cs</file>
+			<line>52</line>
+		</FileLine>
+	</lines>
+    <runAutomatically>true</runAutomatically>
+    <fileTraceInput>true</fileTraceInput>
+  </criteria>
+  <results>
+    <name>TreeAdd</name>
+	<outputFolder>.\examples\TreeAdd\output\results</outputFolder>
+    <resultFile>Results.txt</resultFile>
+	<filteredResultFile>FilteredResults.txt</filteredResultFile>
+	<summaryResultFile>Summary.txt</summaryResultFile>
+	<executedLinesFileForUser>ExecutedLines.txt</executedLinesFileForUser>
+  </results>
+  <instances>
+	<Instance>
+      <parameters>
+		<string>-l 2</string>
+      </parameters>
+    </Instance>
+  </instances>
+</UserConfiguration>

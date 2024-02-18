@@ -20,6 +20,7 @@ Alexis Soifer, Diego Garbervetsky, Victor Braberman, and Sebastian Uchitel. [Foc
 3. [Building the Tool](#Building-the-Tool)
 4. [Configuring the Tool](#Configuring-the-Tool)
 5. [Using the Tool](#Using-the-Tool)
+6. [Running example](#Running-example)
 
 ---
 ---
@@ -48,15 +49,13 @@ Both provide the same capabilities, but the latter also provides a way to visual
 Just run the build command from your shell.
 
 ```bash
-cd DynAbs/src/DynAbs.DesktopApp
-dotnet build --configuration release
+dotnet build DynAbs/src/DynAbs.DesktopApp --configuration release
 ```
 
 And for the command line app:
 
 ```bash
-cd DynAbs/src/DynAbs.ConsoleApp
-dotnet build --configuration release
+dotnet build DynAbs/src/DynAbs.ConsoleApp --configuration release
 ```
 
 ---
@@ -95,8 +94,7 @@ There are some examples in this repository (ongoing).
 
 For running the console app:
 ```bash
-cd DynAbs/src/DynAbs.ConsoleApp
-dotnet run your-slc-file.slc --configuration release
+dotnet run --configuration release --project DynAbs/src/DynAbs.ConsoleApp/DynAbs.ConsoleApp.csproj -- your-slc-file.slc 
 ```
 
 ---
@@ -104,12 +102,22 @@ dotnet run your-slc-file.slc --configuration release
 ### Desktop App
 
 ```bash
-cd DynAbs/src/DynAbs.DesktopApp
-dotnet run --configuration release
+dotnet run --configuration release --project DynAbs/src/DynAbs.DesktopApp/DynAbs.DesktopApp.csproj
 ```
 
 This will display a textbox for pasting your slc path.
 Then press Run, and at the end, show Slice.
+
+---
+---
+
+## Running example
+
+```bash
+dotnet run --configuration release --project DynAbs/src/DynAbs.ConsoleApp/DynAbs.ConsoleApp.csproj -- examples/TreeAdd/config.slc 
+```
+
+This process will generate the slice result in examples/TreeAdd/output/results/Results.txt.
 
 ---
 ---
