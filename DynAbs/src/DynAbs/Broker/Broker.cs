@@ -173,7 +173,7 @@ namespace DynAbs
                 dependencies.UnionWith(useTermLastDef);
             }
             // Se incluyen los uses del SET hasta el último punto
-            if (UserConfiguration.User.customization.includeAllUses)
+            if (UserConfiguration.IncludeAllUses)
                 foreach (var defTerm in defTerms.Where(x => x.Count > 1))
                     dependencies.UnionWith(Solver.LastDef_Get(defTerm.DiscardLast()));
             foreach (var defTerm in defTerms)
@@ -216,8 +216,8 @@ namespace DynAbs
                 foreach (var anotherUse in anotherUses)
                     useTermLastDef.UnionWith(Solver.LastDef_Get(anotherUse));
 
-            // Se incluyen los uses del SET hasta el último punto
-            if (UserConfiguration.User.customization.includeAllUses && defTerm.Count > 1)
+            // It includes the uses of the left hand side
+            if (UserConfiguration.IncludeAllUses && defTerm.Count > 1)
                 useTermLastDef.UnionWith(Solver.LastDef_Get(defTerm.DiscardLast()));
 
             var vtx = AddDgVertex(defTerm.Stmt, useTermLastDef);

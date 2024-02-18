@@ -263,7 +263,7 @@ namespace DynAbs.Aliasing.CS
             {
                 var collectedNodes = new HashSet<uint>();
 
-                var vertices = aPt(term.DiscardLast(), scope, Configuration.User.customization.includeAllUses ? collectedNodes : null);
+                var vertices = aPt(term.DiscardLast(), scope, Configuration.IncludeAllUses ? collectedNodes : null);
                 if (vertices == null && term.IsGlobal)
                     throw new UninitializedTerm(term.DiscardLast());
 

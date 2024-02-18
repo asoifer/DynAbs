@@ -73,7 +73,8 @@ namespace DynAbs
         {
             if (userSliceConfiguration.User != null)
             {
-                if (System.IO.File.Exists(userSliceConfiguration.User.customization.summaries))
+                if (!string.IsNullOrWhiteSpace(userSliceConfiguration?.User?.customization?.summaries) && 
+                    System.IO.File.Exists(userSliceConfiguration.User.customization.summaries))
                     SummaryElement = XElement.Load(userSliceConfiguration.User.customization.summaries);
 
                 UseAnnotations = userSliceConfiguration.UseAnnotations;

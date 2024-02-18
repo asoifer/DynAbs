@@ -14,6 +14,7 @@ namespace DynAbs
         public bool UseAnnotations { get; internal set; }
         public bool MixedModes { get; internal set; }
         public bool LogCalls { get; internal set; }
+        public bool IncludeAllUses => User?.customization?.includeAllUses ?? true;
 
         public bool StaticModeEnabled { get; internal set; }
         public bool LoopsOptimizationEnabled { get; internal set; }

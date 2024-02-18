@@ -230,7 +230,7 @@ namespace DynAbs
             // CASO 2: caso contrario obtenemos los vértices que lo alcanzan con aPt
             var collectedNodes = new HashSet<uint>();
 
-            var vertices = aPt(scope, term.DiscardLast(), Configuration.User.customization.includeAllUses ? collectedNodes : null);
+            var vertices = aPt(scope, term.DiscardLast(), Configuration.IncludeAllUses ? collectedNodes : null);
 
             // Por cada vértice que lo podría apuntar:
             if (vertices == null && term.IsGlobal)

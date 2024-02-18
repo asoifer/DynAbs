@@ -231,7 +231,7 @@ namespace SliceConsole
                     }
             }
 
-            if (Globals.include_all_uses.HasValue)
+            if (Globals.include_all_uses.HasValue && userConfiguration.customization != null)
                 userConfiguration.customization.includeAllUses = Globals.include_all_uses.Value;
 
             if (defaultOrchestrator == null || !useSameCompilation)
