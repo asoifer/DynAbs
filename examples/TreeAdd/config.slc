@@ -23,7 +23,10 @@
     <resultFile>Results.txt</resultFile>
 	<filteredResultFile>FilteredResults.txt</filteredResultFile>
 	<summaryResultFile>Summary.txt</summaryResultFile>
-	<executedLinesFileForUser>ExecutedLines.txt</executedLinesFileForUser>
+	<executedLinesFileForUser>ExecutedLinesForUser.txt</executedLinesFileForUser>
+	<executedLinesFile>ExecutedLines.txt</executedLinesFile>
+	<dependencyGraphFile>DG.txt</dependencyGraphFile>
+	<sliceDependenciesGraphFolder>DGFolder</sliceDependenciesGraphFolder>
   </results>
   <instances>
 	<Instance>
