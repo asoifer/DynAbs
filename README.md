@@ -131,11 +131,11 @@ Let's run and visualize a slice using the desktop app.
 
 This is the initial screen. Here you could paste your configuration file, and press start.
 
-![Image Alt text](/misc/img/desktopapp-init.png "Initial screen"))
+![Image Alt text](/misc/img/desktopapp-init.png "Initial screen")
 
 Once the analysis is completed, you could navigate across the dependency graph.
 
-![Image Alt text](/misc/img/desktopapp-done.png "Slice computed"))
+![Image Alt text](/misc/img/desktopapp-done.png "Slice computed")
 
 At the beginning, you will see the executed lines in yellow. Up to now, there is no slice there.
 On the left, you have the executed files highlighted in yellow, too.
@@ -148,20 +148,19 @@ Now you have highlighted in pink the lines that belong to the backward slice.
 On the left, files that contain sliced lines are written in read.
 If you right-click a statement you will be able to press Show dependencies.
 
-![Image Alt text](/misc/img/desktopapp-after-backward-slice.png "Backward slice"))
+![Image Alt text](/misc/img/desktopapp-after-backward-slice.png "Backward slice")
 
 On the left side, you have the statements that your target statement depends on.
 On the right side, you can find the statements that depend on your target statement.
 If you click in any of those statements the other screen will open/focus that location.
 
-![Image Alt text](/misc/img/desktopapp-analyzing-stmt.png "Analyzing dependencies"))
+![Image Alt text](/misc/img/desktopapp-analyzing-stmt.png "Analyzing dependencies")
 
 Clicking on the other option, Show details, will show you a deeper insight into why there is a dependency between your statement and the others. 
 On the left side, you will find the internal nodes of your statement; clicking any of those nodes will show you which other nodes (subparts of other statements) are dependencies for that node in particular.
 
-![Image Alt text](/misc/img/desktopapp-analyzing-stmt-details.png "Analyzing parts of the statements"))
+![Image Alt text](/misc/img/desktopapp-analyzing-stmt-details.png "Analyzing parts of the statements")
 
----
 ---
 # Contact
 
