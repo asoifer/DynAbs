@@ -27,52 +27,52 @@ namespace DynAbs.DesktopApp
                 (one.B + two.B) >> 1);
         }
 
-        public static void MarcarActualYPadres(TreeNode treeNode, Action<TreeNode> action)
+        public static void HighlightCurrentAndParents(TreeNode treeNode, Action<TreeNode> action)
         {
-            var actual = treeNode;
-            while (actual != null)
+            var current = treeNode;
+            while (current != null)
             {
-                action(actual);
-                actual = actual.Parent;
+                action(current);
+                current = current.Parent;
             }
         }
 
-        public static void MarcarNodo(TreeNode treeNode, string path, Action<TreeNode> action)
+        public static void HighlightNode(TreeNode treeNode, string path, Action<TreeNode> action)
         {
             if (treeNode.ToolTipText == path)
-                MarcarActualYPadres(treeNode, action);
-            foreach (var nodo in treeNode.Nodes)
-                MarcarNodo((TreeNode)nodo, path, action);
+                HighlightCurrentAndParents(treeNode, action);
+            foreach (var node in treeNode.Nodes)
+                HighlightNode((TreeNode)node, path, action);
         }
 
-        public static void MarcarArchivos(Dictionary<int, string> idToFiles, List<TreeNode> nodos, IEnumerable<Stmt> selectedStatements, Action<TreeNode> action)
+        public static void HighlightFiles(Dictionary<int, string> idToFiles, List<TreeNode> nodos, IEnumerable<Stmt> selectedStatements, Action<TreeNode> action)
         {
             var selectedFiles = selectedStatements.Select(x => x.FileId).Distinct();
             foreach (var selectedFile in selectedFiles)
             {
                 var file = idToFiles[selectedFile];
                 foreach (var nodo in nodos)
-                    MarcarNodo(nodo, file, action);
+                    HighlightNode(nodo, file, action);
             }
         }
 
-        public static void LimpiarForeColor(TreeNode treeNode)
+        public static void CleanForeColor(TreeNode treeNode)
         {
             treeNode.ForeColor = Color.Black;
-            foreach (var nodo in treeNode.Nodes)
-                LimpiarForeColor((TreeNode)nodo);
+            foreach (var node in treeNode.Nodes)
+                CleanForeColor((TreeNode)node);
         }
 
-        public static void RefrescarMenuSlice(Dictionary<int, string> idToFiles, TreeView tv, ISet<Stmt> statements)
+        public static void RefreshMenuSlice(Dictionary<int, string> idToFiles, TreeView tv, ISet<Stmt> statements)
         {
             var tvNodes = new List<TreeNode>();
             var nodesEnumerator = tv.Nodes.GetEnumerator();
             while (nodesEnumerator.MoveNext())
             {
-                LimpiarForeColor((TreeNode)nodesEnumerator.Current);
+                CleanForeColor((TreeNode)nodesEnumerator.Current);
                 tvNodes.Add((TreeNode)nodesEnumerator.Current);
             }
-            MarcarArchivos(idToFiles, tvNodes, statements, (x => x.ForeColor = Color.Red));
+            HighlightFiles(idToFiles, tvNodes, statements, (x => x.ForeColor = Color.Red));
             tv.Refresh();
         }
 

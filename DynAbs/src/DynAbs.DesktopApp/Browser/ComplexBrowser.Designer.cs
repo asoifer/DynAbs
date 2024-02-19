@@ -49,7 +49,7 @@
             this.tvArchivos.Name = "tvArchivos";
             this.tvArchivos.Size = new System.Drawing.Size(222, 630);
             this.tvArchivos.TabIndex = 0;
-            this.tvArchivos.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvArchivos_AfterSelect);
+            this.tvArchivos.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.tvFiles_AfterSelect);
             // 
             // cmTextEditorMenu
             // 

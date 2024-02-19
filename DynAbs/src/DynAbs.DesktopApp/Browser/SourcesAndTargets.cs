@@ -20,7 +20,7 @@ namespace DynAbs.DesktopApp.Browser
 
             InitializeComponent();
 
-            // Armamos el árbol desde este lado
+            // Building the tree from this side
             tvSource.Nodes.AddRange(solutionFiles.Select(x => Utils.CopyTreeNode(x)).ToArray());
             tvTarget.Nodes.AddRange(solutionFiles.Select(x => Utils.CopyTreeNode(x)).ToArray());
         }
@@ -35,15 +35,15 @@ namespace DynAbs.DesktopApp.Browser
             _currentSources = sources;
             _currentTargets = targets;
 
-            Utils.RefrescarMenuSlice(_idToFiles, tvSource, sources);
-            Utils.RefrescarMenuSlice(_idToFiles, tvTarget, targets);
+            Utils.RefreshMenuSlice(_idToFiles, tvSource, sources);
+            Utils.RefreshMenuSlice(_idToFiles, tvTarget, targets);
 
             lbSource.DataSource = null;
             lbSource.Refresh();
             lbTarget.DataSource = null;
             lbTarget.Refresh();
 
-            lblCurrentLine.Text = "Analizando: " + (currentLine.Length > 80 ? currentLine.Substring(0, 80) + "..." : currentLine);
+            lblCurrentLine.Text = "Analyzing: " + (currentLine.Length > 80 ? currentLine.Substring(0, 80) + "..." : currentLine);
 
             this.Show();
         }
@@ -74,14 +74,14 @@ namespace DynAbs.DesktopApp.Browser
         {
             var selectedItem = (CustomListBoxItem)lbSource.SelectedItem;
             if (selectedItem != null)
-                _complexBrowser.CargarDocumentoByVertex(selectedItem.key);
+                _complexBrowser.LoadDocumentByVertex(selectedItem.key);
         }
 
         private void lbTarget_SelectedIndexChanged(object sender, EventArgs e)
         {
             var selectedItem = (CustomListBoxItem)lbTarget.SelectedItem;
             if (selectedItem != null)
-                _complexBrowser.CargarDocumentoByVertex(selectedItem.key);
+                _complexBrowser.LoadDocumentByVertex(selectedItem.key);
         }
     }
 }

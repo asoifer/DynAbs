@@ -72,7 +72,7 @@ namespace DynAbs.DesktopApp.Browser
                 node = ((LockStatementSyntax)node).Expression;
             if (node is AccessorDeclarationSyntax)
                 return ((PropertyDeclarationSyntax)node.Parent.Parent).Identifier.Text.Trim();
-            // TODO: No sé porque están estos nodos
+            // TODO:
             if (node is ClassDeclarationSyntax)
                 return ((ClassDeclarationSyntax)node).Identifier.Text.Trim();
 
@@ -85,7 +85,7 @@ namespace DynAbs.DesktopApp.Browser
             var edges = _statementsDependencyGraph.OutEdges(selectedItem.key);
             _currentStatements = new HashSet<Stmt>(edges.Select(x => _vertexToStatement[x.Target]));
 
-            Utils.RefrescarMenuSlice(_idToFiles, tvDependencies, _currentStatements);
+            Utils.RefreshMenuSlice(_idToFiles, tvDependencies, _currentStatements);
         }
 
         private void tvDependencies_AfterSelect(object sender, TreeViewEventArgs e)
@@ -97,7 +97,7 @@ namespace DynAbs.DesktopApp.Browser
         {
             var selectedItem = (CustomListBoxItem)lbDependencies.SelectedItem;
             if (selectedItem != null)
-                _complexBrowser.CargarDocumentoByVertex(selectedItem.key);
+                _complexBrowser.LoadDocumentByVertex(selectedItem.key);
         }
 
         private void LineDetail_FormClosing(object sender, FormClosingEventArgs e)

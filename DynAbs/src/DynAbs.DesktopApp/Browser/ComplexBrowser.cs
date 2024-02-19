@@ -68,8 +68,8 @@ namespace DynAbs.DesktopApp.Browser
 
         private void ComplexBrowser_Load(object sender, EventArgs e)
         {
-            var nodos = ObtenerNodosTreeView();
-            Utils.MarcarArchivos(_idToFiles, nodos, _executedStatements, (x => x.BackColor = Color.Yellow));
+            var nodos = GetNodesTreeView();
+            Utils.HighlightFiles(_idToFiles, nodos, _executedStatements, (x => x.BackColor = Color.Yellow));
             tvArchivos.Nodes.AddRange(nodos.ToArray());
             _currentResult = new HashSet<Stmt>();
             _lineDetail = new LineDetail(this, nodos, _idToFiles, _browsingData.RealDG, _browsingData.VertexToStatement);
@@ -78,33 +78,32 @@ namespace DynAbs.DesktopApp.Browser
         #endregion
 
         #region TreeView
-        // Toma el arbol de los proyectos y arma el árbol
-        List<TreeNode> ObtenerNodosTreeView()
+        // Returns the projects and builds the tree
+        List<TreeNode> GetNodesTreeView()
         {
             var result = new List<TreeNode>();
-            // Por cada proyecto:
-            foreach (var proyect in _currentSolution.Projects)
+            foreach (var project in _currentSolution.Projects)
             {
-                var proyectNode = new TreeNode();
-                var proyectDirectory = Path.GetDirectoryName(proyect.FilePath);
-                proyectNode.Text = proyect.Name;
-                foreach (var document in proyect.Documents)
+                var projectNode = new TreeNode();
+                var projectDirectory = Path.GetDirectoryName(project.FilePath);
+                projectNode.Text = project.Name;
+                foreach (var document in project.Documents)
                 {
                     var documentNode = new TreeNode();
                     documentNode.Text = document.Name;
                     documentNode.ToolTipText = document.FilePath;
 
-                    // Verificamos que el path del documento sea parte del path del project
-                    // Si es path del project, creamos los nodos intermedios necesarios 
-                    // para llegar al archivo desde el path del project
+                    // Check if the document's path is part of the project's path
+                    // If it is part of the project we build the intermediate nodes
+                    // The goal is to reach the file from the project's path
                     var documentDirectory = Path.GetDirectoryName(document.FilePath);
-                    if (!documentDirectory.Contains(proyectDirectory))
-                        proyectNode.Nodes.Add(documentNode);
+                    if (!documentDirectory.Contains(projectDirectory))
+                        projectNode.Nodes.Add(documentNode);
                     else
                     {
-                        var difference = documentDirectory.Substring(proyectDirectory.Length,
-                            documentDirectory.Length - proyectDirectory.Length);
-                        var lastFolder = proyectNode;
+                        var difference = documentDirectory.Substring(projectDirectory.Length,
+                            documentDirectory.Length - projectDirectory.Length);
+                        var lastFolder = projectNode;
                         if (!string.IsNullOrWhiteSpace(difference))
                         {
                             var folders = difference.Substring(1, difference.Length - 1)
@@ -124,7 +123,7 @@ namespace DynAbs.DesktopApp.Browser
                         lastFolder.Nodes.Add(documentNode);
                     }
                 }
-                result.Add(proyectNode);
+                result.Add(projectNode);
             }
             return result;
         }
@@ -140,15 +139,15 @@ namespace DynAbs.DesktopApp.Browser
         #endregion
 
         #region MarcarEditor
-        void RefrescarSlice()
+        void RefreshSlice()
         {
             var tabEnumerator = tcContainer.Controls.GetEnumerator();
             while (tabEnumerator.MoveNext())
                 if (tabEnumerator.Current is TabPage)
-                    RefrescarSlice((Scintilla)((TabPage)tabEnumerator.Current).Controls[0]);
+                    RefreshSlice((Scintilla)((TabPage)tabEnumerator.Current).Controls[0]);
         }
         
-        void RefrescarSlice(Scintilla editor)
+        void RefreshSlice(Scintilla editor)
         {
             // Remove previous slice
             foreach (var line in editor.Lines)
@@ -164,7 +163,7 @@ namespace DynAbs.DesktopApp.Browser
             }
         }
 
-        void RefrescarExecutedLines(Scintilla editor)
+        void RefreshExecutedLines(Scintilla editor)
         {
             var fileId = getCurrentDocumentId(editor);
             foreach (var linea in _executedStatements.Where(x => x.FileId == fileId))
@@ -173,11 +172,11 @@ namespace DynAbs.DesktopApp.Browser
         #endregion
 
         #region General
-        void CargarDocumento(string filePath)
+        void LoadDocument(string filePath)
         {
             if (!string.IsNullOrWhiteSpace(filePath))
             {
-                // No queremos agregar 2 veces el mismo
+                // We don't want to add the same tab twice
                 var tabEnumerator = tcContainer.Controls.GetEnumerator();
                 while (tabEnumerator.MoveNext())
                     if (tabEnumerator.Current is TabPage && ((TabPage)tabEnumerator.Current).Name == "tab:" + filePath)
@@ -190,8 +189,8 @@ namespace DynAbs.DesktopApp.Browser
                 newTab.Name = "tab:" + filePath;
 
                 var newEditor = InitTextEditor(filePath);
-                RefrescarExecutedLines(newEditor);
-                RefrescarSlice(newEditor);
+                RefreshExecutedLines(newEditor);
+                RefreshSlice(newEditor);
 
                 newTab.Controls.Add(newEditor);
                 tcContainer.Controls.Add(newTab);
@@ -199,35 +198,35 @@ namespace DynAbs.DesktopApp.Browser
             }
         }
 
-        public void CargarDocumentoByVertex(string vertex)
+        public void LoadDocumentByVertex(string vertex)
         {
             var document = _idToFiles[Convert.ToInt32(vertex.Split('.')[0])];
-            CargarDocumento(document);
+            LoadDocument(document);
 
-            // TODO-NETCORE (marcar la línea)
+            // TODO-NETCORE (highlight the line)
             //((Scintilla)tcContainer.SelectedTab.Controls[0]).ActiveTextAreaControl.Caret.Line 
             //    = Convert.ToInt32(vertex.Split('.')[1]) - 1;
         }
 
-        private void tvArchivos_AfterSelect(object sender, TreeViewEventArgs e)
+        private void tvFiles_AfterSelect(object sender, TreeViewEventArgs e)
         {
-            CargarDocumento(tvArchivos.SelectedNode.ToolTipText);
+            LoadDocument(tvArchivos.SelectedNode.ToolTipText);
         }
 
         private void backwardSlicingToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var currentLine = getCurrentLine();
             _currentResult = GetByFileIdAndLine(_browsingData.ReducedDG, getCurrentDocumentId(), currentLine);
-            RefrescarSlice();
-            Utils.RefrescarMenuSlice(_idToFiles, tvArchivos, _currentResult);
+            RefreshSlice();
+            Utils.RefreshMenuSlice(_idToFiles, tvArchivos, _currentResult);
         }
 
         private void forwardSliceToolStripMenuItem_Click(object sender, EventArgs e)
         {
             var currentLine = getCurrentLine();
             _currentResult = GetByFileIdAndLine(_reverseDependencyGraph, getCurrentDocumentId(), currentLine);
-            RefrescarSlice();
-            Utils.RefrescarMenuSlice(_idToFiles, tvArchivos, _currentResult);
+            RefreshSlice();
+            Utils.RefreshMenuSlice(_idToFiles, tvArchivos, _currentResult);
         }
 
         private void showDependenciesToolStripMenuItem_Click(object sender, EventArgs e)
@@ -290,7 +289,7 @@ namespace DynAbs.DesktopApp.Browser
         }
         #endregion
 
-        #region Manejo del resultado
+        #region Result
         ISet<Stmt> GetByFileIdAndLine(AdjacencyGraph<string, Edge<string>> graph, int fileId, int line)
         {
             var vertice = fileId + "." + line;
