@@ -8,9 +8,16 @@ namespace DynAbs
 {
     public class SlicerException : Exception
     {
+        public Exception InternalException { get; internal set; }
+
         public SlicerException(string message) : base(message)
         {
             
+        }
+
+        public SlicerException(string message, Exception internalException) : base(message)
+        {
+            InternalException = internalException;
         }
     }
 

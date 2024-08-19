@@ -41,7 +41,9 @@ namespace DynAbs
         {
             _configuration = userSliceConfiguration;
             Globals.InstrumentationResult = instrumentationResult;
-            var _tempDependencyGraph = new CustomDynamicDependencyGraph(); //new SubsumedDependencyGraph();
+            IDependencyGraph _tempDependencyGraph = 
+                _configuration.User?.customization?.dependencyGraph == UserConfiguration.DependencyGraphKind.SubsumedDependencyGraph ?
+                    new SubsumedDependencyGraph() : new CustomDynamicDependencyGraph();
 
             IAliasingSolver _tempAliasingSolver = null;
             var memoryModelKind = _configuration.User?.customization != null ?

@@ -31,9 +31,6 @@ namespace DynAbs
 
         public const string DefaultKind = "Default";
 
-        // Temp path for debugging purposes
-        public const string TempPath = @"C:\Users\alexd\Desktop\Slicer\Varios\temp";
-
         // ProcessConsumer
         public static int LastProcessConsumerId = 0;
         public static int LastTraceAmount = 0;

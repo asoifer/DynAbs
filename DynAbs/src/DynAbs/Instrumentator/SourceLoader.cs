@@ -8,6 +8,7 @@ using System.Threading;
 using System;
 using System.Linq;
 using Microsoft.CodeAnalysis.Text;
+using System.IO;
 
 namespace DynAbs
 {
@@ -48,12 +49,13 @@ namespace DynAbs
             if (project != null && project.files != null)
             {
                 mode = project.mode;
-                files.UnionWith(project.files.Select(x => x.name));
+                files.UnionWith(project.files.Select(x => Path.GetFullPath(x.name)));
                 foreach (var file in project.files)
                 {
-                    if (file.id > 0 && !predefinedIds.ContainsKey(file.name))
+                    var fullName = Path.GetFullPath(file.name);
+                    if (file.id > 0 && !predefinedIds.ContainsKey(fullName))
                     {
-                        predefinedIds[file.name] = file.id;
+                        predefinedIds[fullName] = file.id;
                         if (file.skip.HasValue)
                             skipFileInfo[file.id] = file.skip.Value;
                     }

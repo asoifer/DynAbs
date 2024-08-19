@@ -102,7 +102,9 @@ namespace DynAbs
             public bool includeAllUses { get; set; }
             public bool staticMode { get; set; }
             public bool loopsOptimization { get; set; }
+            public bool skipTraceEnabled { get; set; }
             public MemoryModelKind memoryModel { get; set; }
+            public DependencyGraphKind dependencyGraph { get; set; }
         }
 
         public enum MemoryModelKind 
@@ -113,6 +115,12 @@ namespace DynAbs
             Speed,
             Mixed,
             SingleObject
+        }
+
+        public enum DependencyGraphKind
+        {
+            DynamicDependencyGraph,
+            SubsumedDependencyGraph
         }
 
         public Instance[] instances { get; set; }

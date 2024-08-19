@@ -62,7 +62,7 @@ namespace DynAbs
             ResultsManager = new SlicerResultsManager(InstrumentationResult);
         }
 
-        public void Reset(UserConfiguration userConfiguration, bool refreshSkipInfo = false)
+        public void Reset(UserConfiguration userConfiguration)
         {
             Configuration = new UserSliceConfiguration(userConfiguration);
             ResultsManager = new SlicerResultsManager(InstrumentationResult);
@@ -80,9 +80,10 @@ namespace DynAbs
                     Configuration.FilesToSkip ??= new HashSet<int>();
                     foreach (var file in configProject.files)
                     {
-                        if (InstrumentationResult.FileToIdDictionary.ContainsKey(file.name))
+                        var fullName = Path.GetFullPath(file.name);
+                        if (InstrumentationResult.FileToIdDictionary.ContainsKey(fullName))
                         { 
-                            var id = InstrumentationResult.FileToIdDictionary[file.name];
+                            var id = InstrumentationResult.FileToIdDictionary[fullName];
                             if (file.skip == true)
                                 Configuration.FilesToSkip.Add(id);
                             else
@@ -206,6 +207,7 @@ namespace DynAbs
                 Configuration.User.criteria.mode == UserConfiguration.Criteria.CriteriaMode.AtEnd ? (List<Tuple<int, int>>)null : filesLines, traceFilePath);
             var hasError = false;
             var errMsg = "";
+            Exception internalException = null;
             try
             {
                 mainTraceConsumer.Launch(Configuration.User.criteria.mode == UserConfiguration.Criteria.CriteriaMode.TraceAnalysis);
@@ -214,6 +216,7 @@ namespace DynAbs
             {
                 hasError = true;
                 errMsg = ex.Message;
+                internalException = ex;
             }
 
             if (hasError)
@@ -227,7 +230,7 @@ namespace DynAbs
                     errMsg += $" - {processed}/{total} ({percentage}%)";
                 }
 
-                throw new SlicerException(errMsg);
+                throw new SlicerException(errMsg, internalException);
             }
 
             return mainTraceConsumer;

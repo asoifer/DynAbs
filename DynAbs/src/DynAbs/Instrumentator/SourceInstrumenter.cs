@@ -48,13 +48,14 @@ namespace DynAbs
             if (project != null && project.files != null)
             {
                 mode = project.mode;
-                files.UnionWith(project.files.Select(x => x.name));
+                files.UnionWith(project.files.Select(x => Path.GetFullPath(x.name)));
                 foreach (var file in project.files)
                 {
+                    var fullPath = Path.GetFullPath(file.name);
                     if (file.skip.HasValue)
-                        filesSkipInfo[file.name] = file.skip.Value;
-                    if (file.id > 0 && !predefinedIds.ContainsKey(file.name))
-                        predefinedIds[file.name] = file.id;
+                        filesSkipInfo[fullPath] = file.skip.Value;
+                    if (file.id > 0 && !predefinedIds.ContainsKey(fullPath))
+                        predefinedIds[fullPath] = file.id;
                 }
             }
 
@@ -63,7 +64,7 @@ namespace DynAbs
 
             foreach (var tree in compilation.SyntaxTrees)
             {
-                //Evita instrumentar de mas
+                // This avoids to instrument the same file more than one time
                 if (IgnoreSourceFile(tree.FilePath))
                     continue;          
                 AssocIdToFile(tree.FilePath);
@@ -74,7 +75,7 @@ namespace DynAbs
             var allowedClasses = _configuration.User.GetAllowedClasses(projectName);
             foreach (var tree in compilation.SyntaxTrees)
             {
-                //Evita instrumentar de mas
+                // This avoids to instrument the same file more than one time
                 if (IgnoreSourceFile(tree.FilePath) || SkipFile(tree.FilePath, defaultSkip))
                     continue;          
                 SemanticModel model = compilation.GetSemanticModel(tree);
@@ -87,15 +88,12 @@ namespace DynAbs
                     var newRoot = (CSharpSyntaxNode)rewriter.Visit(tree.GetRoot());
                     var st = CSharpSyntaxTree.ParseText(newRoot.ToFullString());
                     var instrumentedTree = (CSharpSyntaxTree)tree.WithRootAndOptions(st.GetRoot(), tree.Options);
-                    #if DEBUG
-                    File.WriteAllText(Path.Combine(Globals.TempPath, "Instrumented.cs"), instrumentedTree.ToString());
-                    #endif
                     modifiedCompilation = modifiedCompilation.ReplaceSyntaxTree(tree, instrumentedTree);
                     InstrumentedFiles.Add(tree.FilePath);
                 }
                 catch (Exception e)
                 {
-                    Logger.Error("Excepcion en instrumentacion: " + e.ToString());
+                    Logger.Error("Instrumentation exception: " + e.ToString());
                     //throw e;
                 }
             }
@@ -235,7 +233,7 @@ namespace DynAbs
         /*
          *  Input: 
          *  Output: fileIdAssoc
-         *  Idea: return fileIdAssoc
+         *  Idea: returns fileIdAssoc
          */
         public Dictionary<int, string> FilesIds()
         {
@@ -245,7 +243,7 @@ namespace DynAbs
         /*
          *  Input: 
          *  Output: lastInstrumentedFileIdAssoc
-         *  Idea: returna lastInstrumentedFileIdAssoc
+         *  Idea: returns lastInstrumentedFileIdAssoc
          */
         public Dictionary<int, string> LastInstrumentedFileIds()
         {

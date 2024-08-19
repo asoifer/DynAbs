@@ -226,6 +226,16 @@ namespace DynAbs
             new Tuple<int, int, int>(10593, 133508, 133526),
             new Tuple<int, int, int>(10593, 133814, 133836),
             new Tuple<int, int, int>(55, 2243, 2253),
+            new Tuple<int, int, int>(10198, 23010, 23055),
+            new Tuple<int, int, int>(10198, 17182, 17206),
+            new Tuple<int, int, int>(10198, 23504, 23528),
+            new Tuple<int, int, int>(10198, 16738, 16778),
+            new Tuple<int, int, int>(10198, 24866, 24899),
+            new Tuple<int, int, int>(10709, 67576, 67614),
+            new Tuple<int, int, int>(499, 162997, 163048),
+            new Tuple<int, int, int>(10206, 1489, 1516),
+            new Tuple<int, int, int>(10206, 1246, 1278),
+            new Tuple<int, int, int>(10206, 1022, 1054)
         };
         #endregion
         #endregion
