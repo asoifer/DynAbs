@@ -163,7 +163,7 @@ namespace DynAbs
 
         public void DefUseOperation(ISet<Term> defTerms, ISet<Term> useTerms)
         {
-            // Caso "int x, y, z = a + b" tiene x, y, z como defs y a, b como usos.
+            // Case "int x, y, z = a + b" where x, y, z are "defs" and a, b as "uses".
             var dependencies = new HashSet<uint>();
             foreach (var useTerm in useTerms)
             {
@@ -172,7 +172,8 @@ namespace DynAbs
                     throw new UninitializedTerm(useTerm);
                 dependencies.UnionWith(useTermLastDef);
             }
-            // Se incluyen los uses del SET hasta el último punto
+            // This includes the uses of the "set" (intermediate properties/fields).
+            // The last one is not included, since it's the one that is being assigned.
             if (UserConfiguration.IncludeAllUses)
                 foreach (var defTerm in defTerms.Where(x => x.Count > 1))
                     dependencies.UnionWith(Solver.LastDef_Get(defTerm.DiscardLast()));

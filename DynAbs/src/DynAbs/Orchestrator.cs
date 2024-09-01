@@ -278,9 +278,8 @@ namespace DynAbs
             #region Profiling (only in DEBUG mode)
             if (Globals.TimeMeasurement)
             {
-                // Esta información la guardamos siempre en modo debug (por ahora)
-                var debugProfileDataFile = string.IsNullOrWhiteSpace(Configuration.User.results.debugProfileDataFile) ? @"C:\temp\tiempos\totalTimes.txt" : Configuration.User.results.debugProfileDataFile;
-                GlobalPerformanceValues.Save(debugProfileDataFile, mainTraceConsumer.entryPointClassName, mainTraceConsumer.elapsedTime, mainTraceConsumer.totalStatementLines, traceFilePath);
+                if (!string.IsNullOrWhiteSpace(Configuration.User.results.debugProfileDataFile))
+                    GlobalPerformanceValues.Save(Configuration.User.results.debugProfileDataFile, mainTraceConsumer.entryPointClassName, mainTraceConsumer.elapsedTime, mainTraceConsumer.totalStatementLines, traceFilePath);
 
                 if (Configuration.User.criteria.mode != UserConfiguration.Criteria.CriteriaMode.TraceAnalysis)
                 {

@@ -137,7 +137,7 @@ namespace DynAbs
 
             public static void Print()
             {
-                Console.WriteLine("Tiempos del AliasingSolver:");
+                Console.WriteLine("AliasingSolver times:");
                 Console.WriteLine("lastDefGet: " + GlobalPerformanceValues.AliasingSolverValues.Times.LastDefGet.TotalSeconds);
                 Console.WriteLine("lastDefSet: " + GlobalPerformanceValues.AliasingSolverValues.Times.LastDefSet.TotalSeconds);
                 Console.WriteLine("Alloc: " + GlobalPerformanceValues.AliasingSolverValues.Times.Alloc.TotalSeconds);
@@ -148,12 +148,12 @@ namespace DynAbs
                 Console.WriteLine("Havoc: " + GlobalPerformanceValues.AliasingSolverValues.Times.Havoc.TotalSeconds);
                 Console.WriteLine("Total: " + GlobalPerformanceValues.AliasingSolverValues.Times.Total.TotalSeconds);
 
-                Console.WriteLine("------ Maximos ------");
+                Console.WriteLine("------ Max values ------");
                 Console.WriteLine("lastDefGetMax: " + GlobalPerformanceValues.AliasingSolverValues.Times.LastDefGet_Max.TotalSeconds);
                 Console.WriteLine("lastDefSetMax: " + GlobalPerformanceValues.AliasingSolverValues.Times.LastDefSet_Max.TotalSeconds);
                 Console.WriteLine("HavocMax: " + GlobalPerformanceValues.AliasingSolverValues.Times.Havoc_Max.TotalSeconds);
 
-                Console.WriteLine("------ Cantidad de operaciones ------");
+                Console.WriteLine("------ Operations counters ------");
                 Console.WriteLine("lastDefGet: " + GlobalPerformanceValues.AliasingSolverValues.Counters.LastDefGet);
                 Console.WriteLine("lastDefSet: " + GlobalPerformanceValues.AliasingSolverValues.Counters.LastDefSet);
                 Console.WriteLine("Alloc: " + GlobalPerformanceValues.AliasingSolverValues.Counters.Alloc);
@@ -166,7 +166,7 @@ namespace DynAbs
                 Console.WriteLine("------- Cantidad de operaciones TOTAL de AliasingSolver: " +
                     GlobalPerformanceValues.AliasingSolverValues.Counters.Total + " ----------");
 
-                //Imprimo la historia del Havoc
+                // Havoc history
                 //System.IO.File.WriteAllLines(@"C:\temp\compilation\HavocEvolution.txt",
                 //    HavocEvolution.Select(x => x.TotalMilliseconds.ToString()));
             }
@@ -218,12 +218,12 @@ namespace DynAbs
 
             public static void Print()
             {
-                Console.WriteLine("Tiempos del DependencyGraph:");
+                Console.WriteLine("DependencyGraph times:");
                 Console.WriteLine("AddVertex: " + GlobalPerformanceValues.DependencyGraphValues.Times.AddVertex.TotalSeconds);
                 Console.WriteLine("Total: " + GlobalPerformanceValues.DependencyGraphValues.Times.Total.TotalSeconds);
 
                 Console.WriteLine("AddVertex: " + GlobalPerformanceValues.DependencyGraphValues.Counters.AddVertex);
-                Console.WriteLine("------- Cantidad de operaciones TOTAL de DependencyGraph: " +
+                Console.WriteLine("------- Operations counter - DependencyGraph (all): " +
                     GlobalPerformanceValues.DependencyGraphValues.Counters.Total + " ----------");
             }
 
@@ -394,10 +394,10 @@ namespace DynAbs
                 Console.WriteLine("GlobalPerformanceValues.BrokerValues.Times.CatchReturnedValueIntoRegion: " + GlobalPerformanceValues.BrokerValues.Times.CatchReturnedValueIntoRegion.TotalSeconds);
                 Console.WriteLine("Total: " + GlobalPerformanceValues.BrokerValues.Times.Total.TotalSeconds);
 
-                Console.WriteLine("------ Cantidad de operaciones ------");
+                Console.WriteLine("------ Operations Counter ------");
                 Console.WriteLine("GlobalPerformanceValues.BrokerValues.Counters.HandleNonInstrumentedMethod " + GlobalPerformanceValues.BrokerValues.Counters.HandleNonInstrumentedMethod);
 
-                Console.WriteLine(" ----- Cantidad de operaciones TOTAL del Broker " +
+                Console.WriteLine(" ----- Operations Counter - Broker (all) " +
                     GlobalPerformanceValues.BrokerValues.Counters.Total + " ----------");
             }
 
@@ -513,24 +513,23 @@ namespace DynAbs
 
         public static void Save(string file, string name, TimeSpan diff, double executedStatements, string fileTraceInput)
         {
-            string PathTiemposEjecucionTotal = file;
-            var tiemposDir = Path.GetDirectoryName(PathTiemposEjecucionTotal);
-            if (!Directory.Exists(tiemposDir))
-                Directory.CreateDirectory(tiemposDir);
+            var directory = Path.GetDirectoryName(file);
+            if (!Directory.Exists(directory))
+                Directory.CreateDirectory(directory);
 
-            // GENERAL (3): NOMBRE_ARCHIVO CANT._STMT. TOTAL
+            // GENERAL (3): Name Qty._STMT. TOTAL
             // BROKER (16x2): TOTAL | Break | Continue | EnterCondition | ExitCondition | EnterMethod | ExitMethod | Alloc | DefUseOperation | Assign | RedefineType | EnterStaticMode | ExitStaticMode | AssignRV | HandleNonInstrumentedMethod | HandleArrayInitialization | HandleArrayElementReference | CreateNonInstrumentedRegion | CatchReturnedValueIntoRegion
             // DG (1x2): TOTAL | 
             // SOLVER (12x2): TOTAL | LastDef_GET | LastDef_SET | Alloc | Assign | AssignRV | EnterMethodAndBind | ExitMethodAndUnbind | Reachable | Havoc | AddToRegion | RedefineType | CleanTemporaryEntries | EnterStaticMode | ExitStaticMode
             // TRACE (4x2): TOTAL | GetNextStmt | ObserveNextStmt | HasNext
-            // EXTRA: Tamaño de la traza (si está el archivo) 
+            // EXTRA: Trace size (if it exists)
 
-            var sbValores = new StringBuilder();
+            var line = new StringBuilder();
             for (var si = 0; si < 82; si++)
-                sbValores.Append("{" + si + "}|");
+                line.Append("{" + si + "}|");
 
-            System.IO.File.AppendAllLines(PathTiemposEjecucionTotal,
-                new string[] { string.Format(sbValores.ToString(), 
+            System.IO.File.AppendAllLines(file,
+                new string[] { string.Format(line.ToString(), 
                     name, 
                     executedStatements, 
                     diff.TotalMilliseconds.ToString("N0"),

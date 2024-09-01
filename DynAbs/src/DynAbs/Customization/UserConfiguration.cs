@@ -86,7 +86,7 @@ namespace DynAbs
             public string executedCallbacksInfo { get; set; }
             public string callGraphPath { get; set; }
             public string skippedFilesInfo { get; set; }
-            // Solo para modo debug
+            // Only in DEBUG mode
             public string debugProfileDataFile { get; set; }
             public string debugMemoryConsumptionFile { get; set; }
             public string debugMethodsCounterFile { get; set; }
