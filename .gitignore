@@ -41,3 +41,4 @@ packages/
 # Slicer config
 DynAbs/src/DynAbs.ConsoleApp/appsettings.json
 DynAbs/src/DynAbs.DesktopApp/appsettings.json
+DynAbs/src/DynAbs.ConsoleApp/Properties/launchSettings.json
