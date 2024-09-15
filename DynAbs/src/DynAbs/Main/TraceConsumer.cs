@@ -34,8 +34,9 @@ namespace DynAbs
                 TaskContinuationOptions.ExecuteSynchronously);
         }
 
-        public TraceConsumer(ITraceReceiver traceReceiver)
+        public TraceConsumer(UserSliceConfiguration userSliceConfiguration, ITraceReceiver traceReceiver)
         {
+            _configuration = userSliceConfiguration;
             _traceReceiver = traceReceiver;
             _totalTracedLines = 0;
             _past = new Stack<Stmt>();

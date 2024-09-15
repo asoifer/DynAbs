@@ -48,10 +48,12 @@ namespace DynAbs.Aliasing.CS
         public Dictionary<StaticModeKey, PtgVertex> StaticModeOtherNodes = new Dictionary<StaticModeKey, PtgVertex>();
         #endregion
 
+        #region Properties
         UserSliceConfiguration Configuration;
         Stack<Scope> LocalStack = new Stack<Scope>();
         Scope Global = new Scope() { LastDefs = new Dictionary<Field, IntSetWithData>() { { new Field("AUXGLOBAL", ISlicerSymbol.CreateObjectSymbol()), new IntSetWithData(new HashSet<uint>(), 0, false) } } };
         Scope ScopeFor(Term t) => t.IsGlobal ? Global : LocalStack.Peek();
+        #endregion
 
         public ClustersSolver(UserSliceConfiguration userSliceConfiguration)
         {

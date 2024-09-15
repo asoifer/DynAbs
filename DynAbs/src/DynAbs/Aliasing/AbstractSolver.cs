@@ -47,9 +47,9 @@ namespace DynAbs
 
         #region Public
         /// <summary>
-        /// Crea un nuevo container y bindea los parámetros del scope anterior
-        /// Actual param: son las variables del scope anterior. 
-        /// Formal param: son los parámetros de la función actual.
+        /// Creates a new container and binds the parameters of the previous scope
+        /// Actual param: are the variables of the previous scope.
+        /// Formal param: are the parameters of the current function.
         /// </summary>
         public void EnterMethodAndBind(string methodSymbol, List<Term> actualParams, List<Term> formalParams, Term receiver, Term @this)
         {
@@ -67,12 +67,12 @@ namespace DynAbs
                 bool existingMethod;
                 curScope.BaseKey = scopeGraph.PushMethod(methodSymbol, out existingMethod);
 
-                // Si estamos repitiendo el método y no estamos en modo estático entramos
+                // If we're repeating the method and we're not in static mode, we start the static mode
                 if (existingMethod)
                     curScope.IsStaticModeStart = EnterStaticMode(true);
             }
 
-            // Cada parámetro que no es escalar del scope anterior lo bindeamos
+            // Bind each non scalar parameter from the previous scope
             for (var i = 0; i < formalParams.Count; i++)
                 if (actualParams.Count > i && (actualParams[i] != null) && (!actualParams[i].IsScalar) && (!formalParams[i].IsScalar))
                 {
@@ -87,13 +87,13 @@ namespace DynAbs
                     Add(formalParams[i], vertices);
                 }
 
-            // Hacemos lo mismo que con los parámetros no escalares, con el this (que también es un parámetro)
+            // We do the same as the explicit non-scalar parameters with the receiver (an implicit parameter)
             if (receiver != null)
                 Add(@this, aPt(receiver.IsGlobal ? globalScope : previousScope, receiver));
         }
 
         /// <summary>
-        /// Remueve el scope actual, y bindea el término del retorno con el término del scope que lo invoca
+        /// Removes the current scope, and binds the return term to the term of the scope that invokes it
         /// </summary>
         public ISet<uint> ExitMethodAndUnbind(Term term, Term returnExceptionTerm, Term exceptionTerm)
         {
@@ -141,7 +141,7 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Guarda la última definición de un término
+        /// Stores the last definition of a term
         /// </summary>
         public void LastDef_Set(Term term, uint lastDef)
         {
@@ -211,7 +211,7 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Obtenemos los últimos vértices del DG donde fue definido un término
+        /// Returns the last DG vertex where the term may have been defined
         /// </summary>
         public ISet<uint> LastDef_Get(Term term)
         {
@@ -259,7 +259,7 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Agrega un nodo al grafo
+        /// Add a new node to the graph
         /// </summary>
         public void Alloc(Term term, bool @override = true, string kind = null)
         {
@@ -326,7 +326,7 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Asignar Right a Left implica que quienes apuntan a Left ahora deben apuntar a Right
+        /// Assigns Right to Left implies that those who point to Left must now point to Right
         /// </summary>
         public void Assign(Term lhsTerm, Term rhsTerm)
         {
@@ -343,7 +343,7 @@ namespace DynAbs
 
         public void Assign(Term lhsTerm, ScopeContainer lhsScope, ISet<PtgVertex> rightSet)
         {
-            // Los structs se copian --> Aunque si estamos en modo estático se tiene que utilizar el mismo. 
+            // We copy the structs. But if we're in static mode, we will use the same nodes.
             if (lhsTerm.Last.Symbol.IsStruct)
                 if (!StaticMode)
                     rightSet = StructCopy(rightSet);
@@ -370,7 +370,7 @@ namespace DynAbs
 
             var lhsVertices = aPt(lhsScope, lhsTerm.DiscardLast());
 
-            // En el strong eliminamos las referencias anteriores
+            // In strong updates we delete previous references
             var convergedChecked = false;
             if (lhsVertices.Count == 1 && lhsVertices.Single().VertexType != VertexType.Hub && lhsTerm.Last.FieldType != FieldType.Sigma && !lhsVertices.Single().Immutable && !lhsVertices.Single().Multiple)
             {
@@ -409,8 +409,8 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Asigna el término al ReturnValue del scope actual
-        /// Complejidad espacial y temporal: O(1)
+        /// Assigns the term to the ReturnValue of the current scope
+        /// Space and time complexity: O(1)
         /// </summary>
         public void AssignRV(Term term)
         {
@@ -429,7 +429,7 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Dibuja el PtG en el path pasado como parámetro
+        /// Draws the PtG in the path param
         /// </summary>
         public void DumpPTG(string path = @"C:\temp\PointsTo.dot", string label = null, bool getGlobalScope = false, string key = null)
         {
@@ -592,7 +592,7 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Si escapa te dice el nivel, 0 = ROOT
+        /// If it escapes it tells you the level, 0 = ROOT
         /// </summary>
         public int? Escape(PtgVertex w, int LoopDepthValue)
         {
@@ -771,12 +771,10 @@ namespace DynAbs
         }
         #endregion
 
-        //public int veces_que_ejecuto_FULLBFS = 0;
-        //public int veces_que_me_evite_FULLBFS = 0;
         public abstract ISet<PtgVertex> aPt(ScopeContainer scope, Term term, ISet<uint> lastDefinitions = null);
 
         /// <summary>
-        /// Sobrecarga de aPt que no recibe el scope
+        /// Overload of the aPt that does not receives the scope
         /// </summary>
         public ISet<PtgVertex> aPt(Term term, ISet<uint> lastDefinitions = null)
         {
@@ -785,8 +783,8 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Devuelve el conjunto de vértices correspondientes a un término
-        /// Si es global y este no se encuentra, lo agrega
+        /// Returns the set of vertices corresponding to a term
+        /// If it is global and it is not found, it adds it
         /// </summary>
         public VertexSetWithType EntryVertexForTerm(ScopeContainer scope, Term term, ISet<uint> lastDefinitions = null)
         {
@@ -803,19 +801,17 @@ namespace DynAbs
         }
 
         /// <summary>
-        /// Devuelve el scope correspondiente a un término (global o local)
-        /// O(1) en complejidad temporal y espacial
+        /// Returns the scope corresponding to a term (global or local)
+        /// O(1) in time and space complexity
         /// </summary>
-        /// <param name="term"></param>
-        /// <returns></returns>
         public ScopeContainer ScopeForTerm(Term term)
         {
             return term.IsGlobal ? globalScope : CurrentScope();
         }
 
         /// <summary>
-        /// Devuelve el scope actual
-        /// O(1) en complejidad temporal y espacial
+        /// Return the current scope
+        /// O(1) in time and space complexity
         /// </summary>
         public ScopeContainer CurrentScope()
         {

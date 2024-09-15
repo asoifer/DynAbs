@@ -81,7 +81,7 @@ namespace DynAbs
             _traceReceiver = Globals.loops_optimization_enabled ? 
                 new LOTraceReceiver(_tempAliasingSolver, traceInput) : (ITraceReceiver)new TraceReceiver(_configuration, traceInput);
             var _tempTraceConsumer = (_configuration.User.criteria.mode == UserConfiguration.Criteria.CriteriaMode.AtEnd) 
-                ? new TraceConsumer(_traceReceiver) : new TraceConsumer(_configuration, _traceReceiver, fileLines);
+                ? new TraceConsumer(_configuration, _traceReceiver) : new TraceConsumer(_configuration, _traceReceiver, fileLines);
 
             IBroker _originalBroker = null;
 

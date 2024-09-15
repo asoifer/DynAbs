@@ -96,6 +96,7 @@ class Program
     static void ExecuteConfiguration(string pathOrFileName, UserConfiguration userConfiguration, List<string> filesOK, List<string> filesWrong)
     {
         Globals.skip_trace_enabled = foldersToSkip != null || foldersToAnalyze != null || (userConfiguration.customization?.skipTraceEnabled == true);
+        Globals.loops_optimization_enabled = userConfiguration.customization.loopsOptimization;
 
         if (userConfiguration.FoldersToSkip == null && foldersToSkip != null && foldersToSkip.Any())
             userConfiguration.FoldersToSkip = foldersToSkip.Select(x => new UserConfiguration.Folder() { name = x }).ToArray();
