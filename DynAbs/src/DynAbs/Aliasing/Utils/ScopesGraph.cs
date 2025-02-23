@@ -103,7 +103,8 @@ namespace DynAbs
 
             void SetInternalKey()
             {
-                key = (MinPath.Count > 0 ? MinPath[MinPath.Count - 1].Key : "") + MethodSymbol.GetHashCode().ToString() + "|";
+                // Before (TODO): key = (MinPath.Count > 0 ? MinPath[MinPath.Count - 1].Key : "") + MethodSymbol.GetHashCode().ToString() + "|";
+                key = (MinPath.Count > 0 ? MinPath[MinPath.Count - 1].Key : "") + MethodSymbol.ToString() + "|";
             }
         }
 

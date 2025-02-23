@@ -19,9 +19,9 @@ namespace DynAbs
         public ScopeContainer globalScope = new ScopeContainer(true);
         public Stack<ScopeContainer> scopeStack = new Stack<ScopeContainer>();
         public static readonly Field SIGMA_FIELD = Field.SigmaField();
-        // Se utiliza para crear nombres distintos para cada HUB
+        // Incremental ids for regions
         public int HubUniqueId = 0;
-        // Solo está para que el DumpPtg no pinche al final de la ejecución cuando ya la pila de scopes esté vacía
+        // This is only to avoid the application crashes when exiting the analysis with an empty scope stack (DumpPtg)
         public ScopeContainer lastPopedScope;
         #endregion
 
@@ -281,12 +281,13 @@ namespace DynAbs
                 }
             }
 
-            // Si no se obtuvo por el diccionario o no estamos en modo estático se crea el nodo para luego agregar al grafo
+            // Create new node if there isn't a previous node in static mode
             if (vertex == null)
             {
-                vertex = new PtgVertex(Configuration, term.Last.ToString(), true, term.Last.Symbol, false, VertexType.Common, kind, StaticMode && term.IsCallbackAlloc, StaticModeStack.Count, key);
+                // TODO: is callback alloc should affect the static mode property of the new ptg vertex
+                vertex = new PtgVertex(Configuration, term.Last.ToString(), true, term.Last.Symbol, false, VertexType.Common, kind, StaticMode /*&& term.IsCallbackAlloc*/, StaticModeStack.Count, key);
 
-                // Si se llegó hasta acá y estamos en modo estático es que no estaba la clave
+                // At this point, if we're in static mode we need to set up the key
                 if (StaticMode)
                 {
                     if (term.IsCallbackAlloc)
@@ -297,12 +298,12 @@ namespace DynAbs
                         StaticModeStack.Peek().Add(vertex);
                 }
 
-                // Con nodos nuevos ya el PTG está siendo modificado (por ahora)
+                // New nodes implies PTG is not 'converged'
                 if (CheckEqualsSet && (!StaticMode || StaticModeEnabledByCallbackOrRecursion || !StaticModeStack.Peek().Contains(vertex)))
                     SetNotConverged(vertex.LoopDepthLevel);
             }
 
-            // Cuando el término tiene 1 elemento
+            // If the term is a root variable...
             if (term.IsVar)
             {
                 if (@override || (!scope.EntryPointVerticesDict.ContainsKey(term.Last.ToString())))
@@ -310,8 +311,8 @@ namespace DynAbs
                 return;
             }
 
-            // Muy similar al asign
-            // El término izquierdo es complejo, primero obtenemos los vértices que podrían apuntar a nuestro nuevo vértice
+            // This is like an assignment
+            // The left term is not a root variable, so we get first the vertex that may point to this new vertex
             var lhsVertices = aPt(scope, term.DiscardLast());
 
             if (lhsVertices == null && term.IsGlobal)
@@ -376,7 +377,9 @@ namespace DynAbs
             {
                 if (CheckEqualsSet &&
                     (!StaticMode || StaticModeEnabledByCallbackOrRecursion || !StaticModeStack.Peek().Contains(lhsVertices.Single())) &&
-                    lhsVertices.Single().CommonVertex.ContainsKey(lhsTerm.Last.ToString()) && lhsVertices.Single().CommonVertex[lhsTerm.Last.ToString()].Count > 0)
+                    lhsVertices.Single().CommonVertex.ContainsKey(lhsTerm.Last.ToString()) && 
+                    lhsVertices.Single().CommonVertex[lhsTerm.Last.ToString()].Count > 0 &&
+                    !lhsVertices.Single().CommonVertex[lhsTerm.Last.ToString()].SetEquals(rightSet))
                     SetNotConverged(lhsVertices.Single().LoopDepthLevel);
                 convergedChecked = true;
                 lhsVertices.Single().RemoveVertex(lhsTerm.Last.ToString());
