@@ -48,10 +48,16 @@ namespace DynAbs
             if (project != null && project.files != null)
             {
                 mode = project.mode;
-                files.UnionWith(project.files.Select(x => Path.GetFullPath(x.name)));
                 foreach (var file in project.files)
                 {
-                    var fullPath = Path.GetFullPath(file.name);
+                    var filePaths = compilation.SyntaxTrees.Where(x => Path.GetFileName(x.FilePath) == file.name).Select(x => x.FilePath);
+                    if (filePaths.Count() == 0)
+                        continue;
+                    if (filePaths.Count() > 1)
+                        throw new SlicerException("Repeated file name, use absolute path");
+                    var fullPath = filePaths.Single();
+                    files.Add(fullPath);
+
                     if (file.skip.HasValue)
                         filesSkipInfo[fullPath] = file.skip.Value;
                     if (file.id > 0 && !predefinedIds.ContainsKey(fullPath))
@@ -76,7 +82,7 @@ namespace DynAbs
             foreach (var tree in compilation.SyntaxTrees)
             {
                 // This avoids to instrument the same file more than one time
-                if (IgnoreSourceFile(tree.FilePath) || SkipFile(tree.FilePath, defaultSkip))
+                if (IgnoreSourceFile(tree.FilePath) || (!Globals.instrument_skipped_files && SkipFile(tree.FilePath, defaultSkip)))
                     continue;          
                 SemanticModel model = compilation.GetSemanticModel(tree);
                 int idBelongingToThisPath = pathToIdAssoc[tree.FilePath];
@@ -97,6 +103,10 @@ namespace DynAbs
                     //throw e;
                 }
             }
+
+            if (Globals.instrument_skipped_files)
+                _configuration.FilesToSkip = new HashSet<int>(
+                    filesSkipInfo.Where(x => x.Value).Select(x => predefinedIds[x.Key]));
 
             //var dict = InstrumenterRewriter.notSupportedExpressions;
             //foreach (var kv in dict)

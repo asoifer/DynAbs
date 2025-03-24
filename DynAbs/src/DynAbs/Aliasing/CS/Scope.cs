@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DynAbs.Aliasing.CS
 {
-    class Scope
+    public class Scope
     {
         /*
         LastDefs :: var → Set<DGNode>

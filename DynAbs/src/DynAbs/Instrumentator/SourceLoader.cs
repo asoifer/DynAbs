@@ -49,13 +49,23 @@ namespace DynAbs
             if (project != null && project.files != null)
             {
                 mode = project.mode;
-                files.UnionWith(project.files.Select(x => Path.GetFullPath(x.name)));
+                // TODO
+                //files.UnionWith(project.files.Select(x => Path.GetFullPath(x.name)));
                 foreach (var file in project.files)
                 {
-                    var fullName = Path.GetFullPath(file.name);
-                    if (file.id > 0 && !predefinedIds.ContainsKey(fullName))
+                    //var fullName = Path.GetFullPath(file.name);
+
+                    var filePaths = compilation.SyntaxTrees.Where(x => Path.GetFileName(x.FilePath) == file.name).Select(x => x.FilePath);
+                    if (filePaths.Count() == 0)
+                        continue;
+                    if (filePaths.Count() > 1)
+                        throw new SlicerException("Repeated file name, use absolute path");
+                    var fullPath = filePaths.Single();
+                    files.Add(fullPath);
+
+                    if (file.id > 0 && !predefinedIds.ContainsKey(fullPath))
                     {
-                        predefinedIds[fullName] = file.id;
+                        predefinedIds[fullPath] = file.id;
                         if (file.skip.HasValue)
                             skipFileInfo[file.id] = file.skip.Value;
                     }

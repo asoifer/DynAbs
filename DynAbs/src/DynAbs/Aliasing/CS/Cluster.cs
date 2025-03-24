@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DynAbs.Aliasing.CS
 {
-    class Cluster
+    public class Cluster
     {
         public int ID = Globals.NextClusterID++;
         public bool IsHavocRegion = false;

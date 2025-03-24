@@ -50,8 +50,8 @@ namespace DynAbs.Aliasing.CS
 
         #region Properties
         UserSliceConfiguration Configuration;
-        Stack<Scope> LocalStack = new Stack<Scope>();
-        Scope Global = new Scope() { LastDefs = new Dictionary<Field, IntSetWithData>() { { new Field("AUXGLOBAL", ISlicerSymbol.CreateObjectSymbol()), new IntSetWithData(new HashSet<uint>(), 0, false) } } };
+        public Stack<Scope> LocalStack = new Stack<Scope>();
+        public Scope Global = new Scope() { LastDefs = new Dictionary<Field, IntSetWithData>() { { new Field("AUXGLOBAL", ISlicerSymbol.CreateObjectSymbol()), new IntSetWithData(new HashSet<uint>(), 0, false) } } };
         Scope ScopeFor(Term t) => t.IsGlobal ? Global : LocalStack.Peek();
         #endregion
 
@@ -643,7 +643,7 @@ namespace DynAbs.Aliasing.CS
         #endregion
 
         #region Navegation
-        Dictionary<TypeKind, HashSet<PtgVertex>> aPt(Term t, HashSet<uint> lastDefinitions = null)
+        public Dictionary<TypeKind, HashSet<PtgVertex>> aPt(Term t, HashSet<uint> lastDefinitions = null)
         {
             var scope = ScopeFor(t);
             try

@@ -25,6 +25,7 @@ namespace DynAbs
         public static bool skip_trace_enabled = true;
         public static bool? include_all_uses = null;
         public static bool generate_dgs = false;
+        public static bool instrument_skipped_files = true;
 
         // IMPORTANT: this is because we cannot resolve how to wrap structs properties and methods access.
         public static bool wrap_structs_calls = true;

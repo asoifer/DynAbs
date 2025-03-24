@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DynAbs.Aliasing.CS
 {
-    class TypeKind
+    public class TypeKind
     {
         public ISlicerSymbol Type { get; internal set; }
         public string Kind { get; internal set; }

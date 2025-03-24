@@ -19,7 +19,6 @@ namespace DynAbs
         static string FileTraceClientLocation = @"DynAbs.DLLResources.DynAbs.Tracing.FileTraceClient.dll";
         const string ResGenPath = @"C:\Users\alexd\Desktop\Slicer\netslicer\src\Slicer\ResGen.exe";
 
-
         public SourceCompiler(UserSliceConfiguration userSliceConfiguration, Solution userSolution, Solution instrumentedSolution = null, bool returnInstrumentedSolution = true)
         {
             Configuration = userSliceConfiguration;

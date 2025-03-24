@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DynAbs.Aliasing.CS
 {
-    class PtgVertex
+    public class PtgVertex
     {
         public int ID = Globals.NextPtgVertexID++;
         public TypeKind TypeKind { get; set; }
