@@ -39,7 +39,7 @@ namespace DynAbs
 
         public static bool CustomIsStruct(this ITypeSymbol typeSymbol) 
         {
-            return typeSymbol != null && typeSymbol.TypeKind == TypeKind.Struct && !Utils.HasDefaultValue(typeSymbol);
+            return typeSymbol.TypeKind == TypeKind.Struct && !Utils.HasDefaultValue(typeSymbol);
         }
 
         public static bool CustomStructReceiver(this IMethodSymbol methodSymbol)
@@ -512,6 +512,24 @@ namespace DynAbs
                 return ((NamespaceDeclarationSyntax)container).Name.ToString();
 
             throw new NotImplementedException();
+        }
+
+        public static string GetTypeName(this SyntaxNode syntaxNode)
+        {
+            if (syntaxNode is IdentifierNameSyntax)
+                return ((IdentifierNameSyntax)syntaxNode).Identifier.ValueText;
+            if (syntaxNode is GenericNameSyntax)
+            {
+                return ((GenericNameSyntax)syntaxNode).Identifier.ValueText;
+
+                //var genericName = (GenericNameSyntax)syntaxNode;
+                //return genericName.Identifier.ValueText + "<" +
+                //    string.Join(", ", genericName.TypeArgumentList.Arguments.Select(x => x.ToString())) + ">";
+            }
+            if (syntaxNode is QualifiedNameSyntax)
+                return ((QualifiedNameSyntax)syntaxNode).GetText().ToString();
+
+            throw new NotImplementedException("GetTypeName: " + syntaxNode.GetType().FullName);
         }
 
         public static List<string> GetAllContainers(this SyntaxNode node)

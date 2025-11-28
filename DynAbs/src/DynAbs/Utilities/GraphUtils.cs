@@ -228,5 +228,22 @@ namespace DynAbs
             sb.AppendLine("</DirectedGraph>");
             return sb.ToString();
         }
+
+        public static string GenerateDG_GraphML(AdjacencyGraph<string, Edge<string>> graph, Func<string, string> nameFunction)
+        {
+            var sb = new StringBuilder();
+            sb.AppendLine("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+            sb.AppendLine(@"<graphml xmlns=""http://graphml.graphdrawing.org/xmlns"" xmlns:xsi=""http://www.w3.org/2001/XMLSchema-instance"" xsi:schemaLocation=""http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd"">");
+            sb.AppendLine(@"<key id=""d0"" for=""node"" attr.name=""label"" attr.type=""string""/>");
+            sb.AppendLine(@"<key id=""d1"" for=""edge"" attr.name=""weight"" attr.type=""double""/>");
+            sb.AppendLine(@"<graph id=""G"" edgedefault=""directed"">");
+            foreach (var vid in graph.Vertices)
+                sb.AppendLine($@"<node id=""{vid}""><data key=""d0"">{nameFunction(vid).Replace("<", "$").Replace(">", "$")}</data></node>");
+            foreach (var e in graph.Edges)
+                sb.AppendLine($@"<edge id=""e{e.Source + "." + e.Target}"" source=""{e.Source}"" target=""{e.Target}""><data key=""d1"">1</data></edge>");
+            sb.AppendLine(@"</graph>");
+            sb.AppendLine(@"</graphml>");
+            return sb.ToString();
+        }
     }
 }

@@ -32,6 +32,7 @@ namespace DynAbs
             // Autoproperties
             { "Autoproperty_Get", "IsIn{R.$}.{}.{}.{}.{}" }, // We're getting the last definitions
             { "Autoproperty_Set", "Null.{}.{P}.{R.$}.{[R, P, $]}" }, // It is an assign
+            { "Autoproperty_GetWithParams", "IsIn{R.$}.{}.{R;P}.{}.{}" }, // Reading params
 
             // TypeOf
             { "TypeOf", "Fresh.{}.{P}.{RV.?}.{}" },
@@ -179,7 +180,21 @@ namespace DynAbs
 
             var summaryAnnotation = GetSummaryInformation(symbol, methodName);
             if (summaryAnnotation == null && MixedModes)
+            {
+                if (Globals.get_mode_readonly_callback)
+                { 
+                    var methodSymbol = symbol as IMethodSymbol;
+                    if (methodSymbol?.MethodKind == MethodKind.PropertyGet)
+                    {
+                        if (methodSymbol.Parameters.Count() > 0)
+                            return InterpretedAnnotation.Parse(BasicAnnotationSchemes.Annotations["Autoproperty_GetWithParams"]);
+
+                        return InterpretedAnnotation.Parse(BasicAnnotationSchemes.Annotations["BasicScalarSystemCall"]);
+                    }
+                }
                 return null;
+            }
+
             if (summaryAnnotation == null)
                 summaryAnnotation = new SummaryAnnotation(SummaryAnnotationType.Predefined, "HavocWithoutGlobals_IsIn_Many");
 

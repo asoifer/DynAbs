@@ -463,6 +463,9 @@ namespace DynAbs
                 var trimmed = oldLine.Split(',');
                 if (trimmed.Length > 1)
                 {
+                    if (trimmed[0][0] == '#')
+                        continue;
+
                     var fileId = int.Parse(trimmed[0]);
                     if (counterDictionary.ContainsKey(fileId))
                         counterDictionary[fileId]++;
@@ -500,6 +503,8 @@ namespace DynAbs
             sb.AppendLine($"Total files with lines: {counterDictionary.Count}");
             sb.AppendLine($"Total executed files excluded: {totalExcludedExecuted}");
             sb.AppendLine($"Total executed files excluded (percentage): {percentageExecutedExcluded}");
+            sb.AppendLine($"Skipped via get mode (callback): {Globals.TraceSkippedGetModeCallback}");
+            sb.AppendLine($"Skipped via get mode (body): {Globals.TraceSkippedGetModeBody}");
             sb.AppendLine($"Excluded folders: ");
             if (userSliceConfiguration.FoldersToSkip != null)
                 foreach (var excludedFolder in userSliceConfiguration.FoldersToSkip)
