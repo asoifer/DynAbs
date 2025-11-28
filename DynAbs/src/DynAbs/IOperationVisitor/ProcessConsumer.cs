@@ -1,10 +1,12 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using DynAbs.Tracing;
 
 namespace DynAbs
@@ -234,6 +236,9 @@ namespace DynAbs
 
                 if (currentStatement.TraceType == TraceType.SimpleStatement)
                     _broker.SliceCriteriaReached = _traceConsumer.SliceCriteriaReached(currentStatement);
+                // This is not entirely right...
+                else if (currentStatement.TraceType == TraceType.EnterFinalFinally)
+                    _broker.SliceCriteriaReached = _broker.SliceCriteriaReached || _traceConsumer.SliceCriteriaReached();
                 else
                     _broker.SliceCriteriaReached = _traceConsumer.SliceCriteriaReached();
 
@@ -259,6 +264,7 @@ namespace DynAbs
                     case TraceType.ExitFinally: HandleFinnaly(currentStatement); break;
                     case TraceType.SimpleStatement: StatementConsume(currentStatement); break;
                     case TraceType.EnterFinalCatch: HandleFinalCatch(currentStatement); break;
+                    case TraceType.BeforeConstructor: HandleUnknownInvocation(currentStatement); break;
                     default: HandleBodyUnexpectedTrace(currentStatement); break;
                 }
             }
@@ -324,7 +330,8 @@ namespace DynAbs
                 #endregion
 
                 #region Extras
-                if (_sliceCriteriaReached || (!_setReturn && _broker.SliceCriteriaReached))
+                if ((_sliceCriteriaReached || (!_setReturn && _broker.SliceCriteriaReached)) &&
+                    _traceConsumer.SliceCriteriaReached(currentStatement))
                 {
                     _broker.Slice(new ResultSummaryData(currentStatement.FileName, currentStatement.Line,
                         _traceConsumer, _executedStatements, DateTime.Now.Subtract(Globals.start_time)));
@@ -552,7 +559,8 @@ namespace DynAbs
                 HandleInstrumentedMethod(Utils.StmtFromSyntaxNode(enterConstructor.CSharpSyntaxNode, _instrumentationResult), term, arguments, _thisObject, _typeArguments);
                 nextStmt = ObserveNextStatement();
             }
-            else if (nextStmt.TraceType == TraceType.BeforeConstructor ||
+            else if (
+                (nextStmt.TraceType == TraceType.BeforeConstructor && CurrentClassMatchesWithTheFollowingOne(syntaxNode, nextStmt.CSharpSyntaxNode)) ||
                 nextStmt.TraceType == TraceType.BaseCall ||
                 ((nextStmt.TraceType == TraceType.EnterConstructor) &&
                 (
@@ -656,8 +664,76 @@ namespace DynAbs
             Stmt lastCallback = null;
             var enterStaticLoop = false;
 
+            var isForeachCallback = callerMethodName == "MoveNext" || callerMethodName == "GetEnumerator";
+            var callbacksReadMode = Globals.get_mode_readonly_callback && ((caller as IMethodSymbol)?.MethodKind == MethodKind.PropertyGet || isForeachCallback);
+
+            var structCaller = (caller as IMethodSymbol)?.ReceiverType.CustomIsStruct() == true;
+            var structReturnValue = (caller as IMethodSymbol)?.ReturnType.CustomIsStruct() == true;
+            var callbacksSkipTraceMode = Globals.get_mode_skip_callback_trace && ((caller as IMethodSymbol)?.MethodKind == MethodKind.PropertyGet || isForeachCallback);
+
+            if (callbacksSkipTraceMode && node != null && nextStmt != null && Utils.IsEnterMethodOrConstructor(nextStmt.TraceType))
+            {
+                if (finalTraceType != null && finalTraceType.Value != TraceType.EndMemberAccess)
+                {
+                    var foreachParent = node!.GetStatementContainer()?.Kind() == SyntaxKind.ForEachStatement;
+                    if ((!structCaller /*&& !structReturnValue*/) || (isForeachCallback || foreachParent))
+                    {
+                        ConsumeUntil(_originalStatement?.FileId ?? _currentFileId, node, finalTraceType.Value, true);
+                        nextStmt = ObserveNextStatement();
+                    }
+                    else
+                        ;
+                }
+            }
+
             while (nextStmt != null && Utils.IsEnterMethodOrConstructor(nextStmt.TraceType))
             {
+                var skippedConstructors = new List<Stmt>();
+                if (callbacksSkipTraceMode && node != null && (finalTraceType == null || finalTraceType.Value == TraceType.EndMemberAccess))
+                {
+                    if (nextStmt.TraceType == TraceType.BeforeConstructor || nextStmt.TraceType == TraceType.BaseCall)
+                    {
+                        while (nextStmt.TraceType != TraceType.EnterConstructor)
+                        {
+                            if (nextStmt.TraceType == TraceType.BeforeConstructor || nextStmt.TraceType == TraceType.BaseCall)
+                                skippedConstructors.Add(nextStmt);
+
+                            Globals.TraceSkippedGetModeCallback++;
+                            nextStmt = _traceConsumer.GetNextStatement();
+
+                            if (nextStmt.FileId == fileId && nextStmt.Line == lineNumber)
+                                ;
+                        }
+                    }
+
+                    ConsumeUntil(nextStmt.FileId, nextStmt.CSharpSyntaxNode, TraceType.EnterFinalFinally, true);
+                    nextStmt = GetNextStatement(); // This should be the last enter final finally
+                    nextStmt = ObserveNextStatement();
+
+                    // Here there could be some EndMemberAccess that come from the constructor
+                    while ((nextStmt.TraceType == TraceType.EndMemberAccess || 
+                        nextStmt.TraceType == TraceType.EndInvocation) && 
+                        skippedConstructors.Any(x => x.CSharpSyntaxNode == 
+                            (nextStmt.CSharpSyntaxNode.GetContainerOrConstructorInitializerSyntax() is ConstructorInitializerSyntax ?
+                            nextStmt.CSharpSyntaxNode.GetContainerOrConstructorInitializerSyntax().Parent :
+                            nextStmt.CSharpSyntaxNode.GetContainerOrConstructorInitializerSyntax())))
+                    {
+                        Globals.TraceSkippedGetModeCallback++;
+                        nextStmt = _traceConsumer.GetNextStatement();
+                        nextStmt = ObserveNextStatement();
+                    }
+
+                    continue;
+                }
+
+                if (false && nextStmt.FileId == 386)
+                {
+                    ConsumeUntil(nextStmt.FileId, nextStmt.CSharpSyntaxNode, TraceType.EnterFinalFinally, true);
+                    nextStmt = GetNextStatement(); // This should be the last enter final finally
+                    nextStmt = ObserveNextStatement();
+                    continue;
+                }
+
                 // Caso particular del callback del ToString
                 if (nextStmt.TraceType == TraceType.EnterMethod && involvedTerms.Count == 1 && nextStmt.CSharpSyntaxNode is MethodDeclarationSyntax methodDeclarationSyntax && methodDeclarationSyntax.ParameterList.Parameters.Count == 0)
                 {
@@ -728,11 +804,19 @@ namespace DynAbs
                     arity = 0;
                     currentSymbol = ISlicerSymbol.Create(((INamedTypeSymbol)declaredSymbol).ConstructedFrom);
                 }
-                
+
                 _broker.LogCallback(declaredSymbol is IMethodSymbol ? declaredSymbol : currentSymbol.Symbol, caller, callerMethodName);
 
                 // Objeto que se retorna del callback
                 var returnHub = _termFactory.Create(node, currentSymbol, false, TermFactory.GetFreshName(), true, true);
+
+                if (callbacksReadMode)
+                {
+                    regionHub.Stmt = nextStmt;
+                    returnHub.Stmt = nextStmt;
+                    node = nextStmt.CSharpSyntaxNode;
+                }
+
                 // Si no hay argumentos y es constructor no hace falta crear ninguna fucking región
                 bool needToCreateRegion = true;
 
@@ -748,7 +832,7 @@ namespace DynAbs
                 if (!regionCreated && needToCreateRegion)
                 {
                     // Supongamos que son varios constructores sin argumentos, nunca se creó la región. Ahora que se crea tenemos que incluir todos los objetos devueltos previamente.
-                    _broker.CreateNonInstrumentedRegion(involvedTerms.Union(returnTerms).ToList(), regionHub);
+                    _broker.CreateNonInstrumentedRegion(involvedTerms.Union(returnTerms).ToList(), regionHub, callbacksReadMode);
                     regionCreated = true;
                 }
 
@@ -767,7 +851,7 @@ namespace DynAbs
                 {
                     returnTerms.Add(ExceptionTerm);
                     if (regionCreated)
-                        _broker.CatchReturnedValueIntoRegion(regionHub, ExceptionTerm);
+                        _broker.CatchReturnedValueIntoRegion(regionHub, ExceptionTerm, false);
 
                     _broker.SliceCriteriaReached = _traceConsumer.SliceCriteriaReached();
                 }
@@ -776,7 +860,7 @@ namespace DynAbs
                     returnTerms.Add(returnHub);
                     // Se devolvió algo, entonces si hay región tenemos que agregarlo
                     if (regionCreated)
-                        _broker.CatchReturnedValueIntoRegion(regionHub, returnHub);
+                        _broker.CatchReturnedValueIntoRegion(regionHub, returnHub, callbacksReadMode);
                 }
                 ExceptionTerm = localExceptionTerm;
 
@@ -789,7 +873,7 @@ namespace DynAbs
             if (nextStmt != null)
             {
                 if (finalTraceType.HasValue && nextStmt.TraceType == finalTraceType.Value && consume)
-                    GetNextStatement(finalTraceType.Value, false); // TODO: El false del final está para que no pinche IOP...
+                    GetNextStatement(finalTraceType.Value, false, node); // TODO: El false del final está para que no pinche IOP...
                 // TODO: Soluciona TEMPORALMENTE el problema de Lazy Initialization y similares (test LazyInitialization)
                 // POR FAVOR VER BIEN
                 else if (consume && nextStmt.TraceType == TraceType.EndInvocation && nextStmt.CSharpSyntaxNode.Parent is ParenthesizedLambdaExpressionSyntax)
@@ -1024,6 +1108,11 @@ namespace DynAbs
             _broker.HandleNonInstrumentedMethod(new List<Term>(), null, new List<Term>(), yieldReturnValuesContainer,
                 ((ITypeSymbol)_semanticModelsContainer.GetBySyntaxNode((CSharpSyntaxNode)_methodNode)
                 .GetSymbolInfo(returnType).Symbol), "ctor");
+        }
+
+        void HandleUnknownInvocation(Stmt currentStatement)
+        {
+            HandleNonInstrumentedMethod((IOperation)null, new List<Term>(), _thisObject, null, _thisObject?.Last.Symbol.Symbol, null, null);
         }
         #endregion
     }
