@@ -1,11 +1,11 @@
-﻿using QuikGraph;
-using QuikGraph.Algorithms.Search;
-using QuikGraph.Graphviz;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+
+using QuikGraph;
+using QuikGraph.Graphviz;
 
 namespace DynAbs
 {
@@ -214,6 +214,77 @@ namespace DynAbs
                     graph.AddEdge(new Edge<uint>(node.Key, edge));
 
             return graph;
+        }
+
+        AdjacencyGraph<string, Edge<string>> RemoveUnusedNodes(AdjacencyGraph<string, Edge<string>> graph, string target)
+        {
+            var newGraph = new AdjacencyGraph<string, Edge<string>>();
+            var vertexToInclude = new HashSet<string>();
+            foreach (var node in graph.Vertices)
+            {
+                if (IsReachable(graph, node, target))
+                    vertexToInclude.Add(node);
+            }
+
+            newGraph.AddVertexRange(vertexToInclude);
+            foreach (var v in graph.Vertices.Where(x => vertexToInclude.Contains(x)))
+                foreach (var e in graph.OutEdges(v).Select(x => x.Target).Where(x => vertexToInclude.Contains(x)))
+                    newGraph.AddEdge(new Edge<string>(v, e));
+
+            return newGraph;
+        }
+
+        public AdjacencyGraph<string, Edge<string>> GetStmtAdjacencyGraph(AdjacencyGraph<uint, Edge<uint>> graph)
+        {
+            var result = new AdjacencyGraph<string, Edge<string>>();
+            foreach (var key in graph.Vertices.Select(x => vertexToStmtsRepresented[x]).ToHashSet(new StmtFileAndLineEqualityComparer()))
+                result.AddVertex(StmtToString(key));
+
+            var edgesAdded = new HashSet<string>();
+
+            foreach (var vn in graph.Vertices)
+            {
+                foreach (var node in graph.OutEdges(vn))
+                {
+                    var edgeName = StmtToString(vertexToStmtsRepresented[vn]) + "." + StmtToString(vertexToStmtsRepresented[node.Target]);
+                    var added = edgesAdded.Add(edgeName);
+                    if (added)
+                        result.AddEdge(new Edge<string>(StmtToString(vertexToStmtsRepresented[vn]), StmtToString(vertexToStmtsRepresented[node.Target])));
+                }
+            }
+            return result;
+
+            string StmtToString(Stmt stmt)
+            {
+                return stmt == null ? "EXTERNAL" : Path.GetFileName(stmt.FileName) + ":" + stmt.Line.ToString();
+            }
+        }
+
+        bool IsReachable(AdjacencyGraph<string, Edge<string>> graph, string start, string target)
+        {
+            if (start.Equals(target))
+                return true;
+
+            var visited = new HashSet<string>();
+            var queue = new Queue<string>();
+
+            visited.Add(start);
+            queue.Enqueue(start);
+
+            while (queue.Count > 0)
+            {
+                var v = queue.Dequeue();
+                foreach (var neighbor in graph.OutEdges(v))
+                {
+                    if (neighbor.Target.Equals(target))
+                        return true;
+
+                    // Add returns false if already present
+                    if (visited.Add(neighbor.Target))
+                        queue.Enqueue(neighbor.Target);
+                }
+            }
+            return false;
         }
         #endregion
     }
