@@ -174,16 +174,16 @@ namespace DynAbs
             _broker.AssignRV(returnValue);
         }
 
-        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null)
+        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null, bool getMode = false)
         {
             try
             {
-                _broker.HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName);
+                _broker.HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName, getMode);
             }
             catch (UninitializedTerm uninitializedTerm)
             {
                 InitializeTerm(uninitializedTerm.Term);
-                HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName);
+                HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName, getMode);
             }
         }
 
@@ -200,29 +200,29 @@ namespace DynAbs
             }
         }
 
-        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue)
+        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue, bool getMode)
         {
             try
             {
-                _broker.CreateNonInstrumentedRegion(involvedTerms, returnValue);
+                _broker.CreateNonInstrumentedRegion(involvedTerms, returnValue, getMode);
             }
             catch (UninitializedTerm uninitializedTerm)
             {
                 InitializeTerm(uninitializedTerm.Term);
-                CreateNonInstrumentedRegion(involvedTerms, returnValue);
+                CreateNonInstrumentedRegion(involvedTerms, returnValue, getMode);
             }
         }
 
-        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue)
+        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue, bool getMode)
         {
             try
             {
-                _broker.CatchReturnedValueIntoRegion(region, returnedValue);
+                _broker.CatchReturnedValueIntoRegion(region, returnedValue, getMode);
             }
             catch (UninitializedTerm uninitializedTerm)
             {
                 InitializeTerm(uninitializedTerm.Term);
-                CatchReturnedValueIntoRegion(region, returnedValue);
+                CatchReturnedValueIntoRegion(region, returnedValue, getMode);
             }
         }
 

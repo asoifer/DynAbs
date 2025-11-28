@@ -201,12 +201,16 @@ namespace DynAbs
             if (associatedSymbol.ContainsKey(name))
                 return associatedSymbol[name];
 
+            var projects = GetProjects(Globals.UserSolution.Projects);
             var returnedSymbol = ISlicerSymbol.CreateNullTypeSymbol();
             var symbols = new HashSet<INamedTypeSymbol>();
-            foreach (var project in Globals.UserSolution.Projects)
+            foreach (var project in projects)
             {
-                var results = Microsoft.CodeAnalysis.FindSymbols.SymbolFinder.FindDeclarationsAsync(project, name.Split('.').Last(), true).Result;
+                var results = Microsoft.CodeAnalysis.FindSymbols.SymbolFinder.FindDeclarationsAsync(project, name.Split('.').Last(), true, SymbolFilter.TypeAndMember).Result;
                 symbols.UnionWith(results.OfType<INamedTypeSymbol>());
+
+                if (symbols.Any(x => x.ContainingNamespace.Name + "." + x.Name == name))
+                    break;
             }
 
             if (symbols.Count > 1)
@@ -225,6 +229,31 @@ namespace DynAbs
                 returnedSymbol = ISlicerSymbol.Create(symbols.Single());
             associatedSymbol[name] = returnedSymbol;
             return returnedSymbol;
+        }
+
+        public static List<Project> GetProjects(IEnumerable<Project> projects)
+        {
+            var targetFramework = "netcoreapp3.1";
+
+            var list = new List<Project>();
+            var dict = new Dictionary<string, HashSet<string>>();
+            foreach (var p in projects)
+            {
+                var s = p.Name.Split('(');
+                var n = s.First();
+                if (!dict.ContainsKey(n))
+                    dict[n] = new HashSet<string>();
+
+                if (s.Count() == 1)
+                    dict[n].Add(string.Empty);
+                else
+                    dict[n].Add(s[1].Substring(0, s[1].Length - 1));
+            }
+
+            var candidates = dict.Select(x => x.Key + (x.Value.Contains(targetFramework) ? "(" + targetFramework + ")" : "")).ToList();
+            list.AddRange(projects.Where(x => x.Name == null || candidates.Contains(x.Name)));
+
+            return list;
         }
     }
 }

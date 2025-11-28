@@ -34,6 +34,8 @@ namespace DynAbs
 
         public bool IsInitializedForException { get; set; }
 
+        public bool IsReadOnly { get; set; }
+
         public bool IsVar
         {
             get

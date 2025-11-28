@@ -1,9 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DynAbs
 {
@@ -56,6 +52,26 @@ namespace DynAbs
             GlobalPerformanceValues.AliasingSolverValues.Counters.Assign++;
             var start = DateTime.Now;
             solver.Assign(term1, term2);
+            var diff = DateTime.Now.Subtract(start);
+            GlobalPerformanceValues.AliasingSolverValues.Times.Assign =
+                GlobalPerformanceValues.AliasingSolverValues.Times.Assign.Add(diff);
+        }
+
+        public void MultipleAssign(Term lhsTerm, List<Term> rhsTerms)
+        {
+            GlobalPerformanceValues.AliasingSolverValues.Counters.Assign++;
+            var start = DateTime.Now;
+            solver.MultipleAssign(lhsTerm, rhsTerms);
+            var diff = DateTime.Now.Subtract(start);
+            GlobalPerformanceValues.AliasingSolverValues.Times.Assign =
+                GlobalPerformanceValues.AliasingSolverValues.Times.Assign.Add(diff);
+        }
+
+        public void WeakAssign(Term lhsTerm, Term rhsTerm)
+        {
+            GlobalPerformanceValues.AliasingSolverValues.Counters.Assign++;
+            var start = DateTime.Now;
+            solver.WeakAssign(lhsTerm, rhsTerm);
             var diff = DateTime.Now.Subtract(start);
             GlobalPerformanceValues.AliasingSolverValues.Times.Assign =
                 GlobalPerformanceValues.AliasingSolverValues.Times.Assign.Add(diff);

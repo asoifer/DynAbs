@@ -25,6 +25,8 @@ namespace DynAbs.Summaries
 
         public List<Connect> CN;
 
+        public bool GetAssign = false;
+
         public static InterpretedAnnotation Parse(string s)
         {
             var inputStream = new AntlrInputStream(s);

@@ -1,11 +1,13 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using DynAbs.Tracing;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DynAbs.Tracing;
+using System.Security.AccessControl;
+using System.Text;
 
 namespace DynAbs
 {
@@ -55,11 +57,12 @@ namespace DynAbs
             return newTerm;
         }
 
-        bool HasAccesor(string Name, IDictionary<ITypeSymbol, ITypeSymbol> typesDictionary, out bool isSetAccessor, bool comesFromIndexedProperty = false)
+        bool HasAccesor(string Name, IDictionary<ITypeSymbol, ITypeSymbol> typesDictionary, out bool isSetAccessor, out Stmt stmt, bool comesFromIndexedProperty = false)
         {
             var nextStatement = ObserveNextStatement(true, typesDictionary);
             var syntaxNode = nextStatement.CSharpSyntaxNode;
             isSetAccessor = false;
+            stmt = null;
 
             if ((nextStatement.TraceType == TraceType.EnterMethod || nextStatement.TraceType == TraceType.EnterStaticMethod)
                 && ((syntaxNode is ArrowExpressionClauseSyntax && (!(syntaxNode.Parent is MethodDeclarationSyntax)) &&
@@ -73,6 +76,7 @@ namespace DynAbs
                     ((AccessorDeclarationSyntax)syntaxNode).Keyword.ValueText.Equals("set", StringComparison.OrdinalIgnoreCase)) ||
                     ((syntaxNode is ArrowExpressionClauseSyntax) && (syntaxNode.Parent is AccessorDeclarationSyntax) &&
                     ((AccessorDeclarationSyntax)syntaxNode.Parent).Keyword.ValueText.Equals("set", StringComparison.OrdinalIgnoreCase));
+                stmt = nextStatement;
                 return true;
             }
 
@@ -286,9 +290,25 @@ namespace DynAbs
             return parameterSyntax.ToList();
         }
 
-        Stmt GetNextStatement(TraceType? traceType = null, bool throwException = true)
+        Stmt GetNextStatement(TraceType? traceType = null, bool throwException = true, CSharpSyntaxNode syntaxNode = null)
         {
             var stmt = ObserveNextStatement();
+
+            if (!traceType.HasValue || stmt.TraceType == traceType.Value)
+            {
+                if (syntaxNode == null)
+                    return _traceConsumer.GetNextStatement();
+
+                var _originalStatementFileId = _originalStatement?.FileId ?? -1;
+
+                if (traceType == TraceType.EndMemberAccess &&
+                    ((_originalStatementFileId != stmt.FileId && _currentFileId != stmt.FileId) ||
+                    !(stmt.SpanStart == syntaxNode.Span.Start || stmt.SpanEnd == syntaxNode.Span.End)))
+                    return null;
+
+                return _traceConsumer.GetNextStatement();
+            }
+
             if (traceType.HasValue && stmt.TraceType != traceType.Value)
             {
                 if (stmt.TraceType == TraceType.EnterCatch)
@@ -356,6 +376,107 @@ namespace DynAbs
                     tmp = _traceConsumer.ObserveNextStatement();
             }
             return tmp;
+        }
+
+        bool ConsumeUntil(int fileId, CSharpSyntaxNode syntaxNode, TraceType traceType, bool isCallback)
+        {
+            var apparitionsToConsume = 1;
+
+            if (syntaxNode is MemberBindingExpressionSyntax)
+                syntaxNode = (CSharpSyntaxNode)syntaxNode.Parent;
+
+            var candidates = new List<Tuple<int, int>>();
+            candidates.Add(new Tuple<int, int>(syntaxNode.Span.Start, syntaxNode.Span.End));
+            if (syntaxNode is AccessorDeclarationSyntax && syntaxNode.Parent.Parent is PropertyDeclarationSyntax propertyDeclarationSyntax)
+                candidates.Add(new Tuple<int, int>(propertyDeclarationSyntax.Span.Start, propertyDeclarationSyntax.Span.End));
+
+            Queue<Stmt> queue = null;
+            if (Globals.prevent_get_mode_exceptions)
+                queue = new Queue<Stmt>();
+            var returned = false;
+
+            var nextStmt = ObserveNextStatement();
+            while (nextStmt != null &&
+                (apparitionsToConsume > 0 ||
+                (nextStmt.FileId != fileId ||
+                nextStmt.TraceType != traceType ||
+                candidates.All(x => Math.Abs(nextStmt.SpanStart - x.Item1) > 1 || Math.Abs(nextStmt.SpanEnd - x.Item2) > 1))))
+            {
+                try
+                {
+                    var skippedStmt = GetNextStatement();
+                    if (Globals.prevent_get_mode_exceptions)
+                        queue.Enqueue(skippedStmt);
+
+                    if (isCallback)
+                        Globals.TraceSkippedGetModeCallback++;
+                    else
+                        Globals.TraceSkippedGetModeBody++;
+
+                    nextStmt = ObserveNextStatement();
+
+                    if (nextStmt.FileId == fileId &&
+                (nextStmt.TraceType == TraceType.EnterMethod || nextStmt.TraceType == TraceType.EnterStaticMethod ||
+                nextStmt.TraceType == TraceType.EnterConstructor || nextStmt.TraceType == TraceType.EnterStaticConstructor) &&
+                candidates.Any(x => Math.Abs(nextStmt.SpanStart - x.Item1) <= 1 && Math.Abs(nextStmt.SpanEnd - x.Item2) <= 1))
+                        apparitionsToConsume++;
+
+                    if (nextStmt != null &&
+                        !(nextStmt.FileId != fileId ||
+                        nextStmt.TraceType != traceType ||
+                        candidates.All(x => Math.Abs(nextStmt.SpanStart - x.Item1) > 1 || Math.Abs(nextStmt.SpanEnd - x.Item2) > 1)))
+                        apparitionsToConsume--;
+                }
+                catch (SlicerException ex)
+                {
+                    Console.WriteLine($"Couldn't find: {fileId},{syntaxNode.Span.Start},{syntaxNode.Span.End}");
+
+                    returned = true;
+
+                    if (Globals.prevent_get_mode_exceptions)
+                        _traceConsumer.ReturnStatementsToBuffer(queue);
+
+                    //ShowMeEverything(fileId, syntaxNode);
+
+                    break;
+                }
+            }
+
+            if (returned)
+                ;
+
+            return !returned;
+        }
+
+        void TryConsume(int fileId, CSharpSyntaxNode syntaxNode, TraceType traceType)
+        {
+            if (syntaxNode is MemberBindingExpressionSyntax)
+                syntaxNode = (CSharpSyntaxNode)syntaxNode.Parent;
+
+            var nextStmt = ObserveNextStatement();
+            if (nextStmt != null &&
+                nextStmt.FileId == fileId &&
+                nextStmt.TraceType == traceType &&
+                Math.Abs(nextStmt.SpanStart - syntaxNode.Span.Start) <= 1 && 
+                Math.Abs(nextStmt.SpanEnd - syntaxNode.Span.End) <= 1)
+            {
+                GetNextStatement();
+            }
+        }
+
+        static void ShowMeEverything(int fileId, CSharpSyntaxNode syntaxNode)
+        {
+            var sb = new StringBuilder();
+            foreach (var s in 
+            syntaxNode
+                .GetContainerClass()
+                .DescendantNodes()
+                .OfType<MemberAccessExpressionSyntax>()
+                .Select(x => x.GetText().ToString().Trim() + $" - {fileId},{x.Span.Start},{x.Span.End}"))
+            {
+                sb.AppendLine(s);
+            }
+            Console.WriteLine(sb.ToString());
         }
 
         void ConsumeExitLoops()
@@ -580,6 +701,24 @@ namespace DynAbs
             var p_semanticModel = _semanticModelsContainer.GetBySyntaxNode(syntaxNode);
             var p_operation = p_semanticModel.GetOperation(syntaxNode);
             return p_operation;
+        }
+
+        bool CurrentClassMatchesWithTheFollowingOne(CSharpSyntaxNode current, CSharpSyntaxNode next)
+        {
+            var currentClassOrStructDeclaration = current.GetContainerClass();
+            var nextClassOrStructDeclaration = next.GetContainerClass();
+
+            var currentTypes = new List<string>();
+            var classOrStructName = currentClassOrStructDeclaration.GetName();
+            if (classOrStructName != null)
+                currentTypes.Add(classOrStructName);
+            var baseType = (currentClassOrStructDeclaration as ClassDeclarationSyntax)?.BaseList?.Types.FirstOrDefault()?.Type;
+            if (baseType != null)
+                currentTypes.Add(baseType.GetTypeName());
+
+            var nextTypeName = nextClassOrStructDeclaration.GetName();
+
+            return currentTypes.Any(x => x.Equals(nextTypeName, StringComparison.OrdinalIgnoreCase));
         }
 
         bool DealingWithDisposing()

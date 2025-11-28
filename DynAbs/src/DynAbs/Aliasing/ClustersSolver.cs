@@ -76,7 +76,7 @@ namespace DynAbs.Aliasing.CS
                 {
                     var typeVertex = aPt(actualParams[i], actualParams[i].IsGlobal ? Global : previous);
                     if (formalParams[i].IsStruct)
-                        typeVertex = StructCopy(typeVertex);
+                        typeVertex = Copy(typeVertex, formalParams[i].Last.Symbol);
 
                     current.PointsTo[formalParams[i].First] = typeVertex;
                 }
@@ -170,6 +170,42 @@ namespace DynAbs.Aliasing.CS
                 StaticModeAllocatedVertices[key] = v;
         }
 
+        public void MultipleAssign(Term lhsTerm, List<Term> rhsTerms)
+        {
+            if (!lhsTerm.IsVar)
+                throw new NotImplementedException();
+
+            var leftScope = ScopeFor(lhsTerm);
+            if (!leftScope.PointsTo.TryGetValue(lhsTerm.First, out var currentSet))
+            { 
+                currentSet = new Dictionary<TypeKind, HashSet<PtgVertex>>();
+                leftScope.PointsTo[lhsTerm.First] = currentSet;
+            }
+
+            foreach (var rhsTerm in rhsTerms)
+            {
+                var rightScope = ScopeFor(rhsTerm);
+                var rightSet = aPt(rhsTerm, rightScope) ?? new Dictionary<TypeKind, HashSet<PtgVertex>>();
+                foreach (var rs in rightSet)
+                {
+                    if (!currentSet.ContainsKey(rs.Key))
+                        currentSet[rs.Key] = CSUtils.CreateReferenceComparedPTGHashSet();
+                    currentSet[rs.Key].UnionWith(rs.Value.Select(x => x.Find()));
+                }
+            }
+        }
+
+        public void WeakAssign(Term lhsTerm, Term rhsTerm)
+        {
+            if (!lhsTerm.IsVar)
+                throw new NotImplementedException();
+
+            var leftScope = ScopeFor(lhsTerm);
+            var rightScope = ScopeFor(rhsTerm);
+            var currentSet = aPt(rhsTerm, rightScope) ?? new Dictionary<TypeKind, HashSet<PtgVertex>>();
+            Assign(lhsTerm, leftScope, currentSet, false, null, false);
+        }
+
         public void Assign(Term lhsTerm, Term rhsTerm)
         {
             var leftScope = ScopeFor(lhsTerm);
@@ -180,13 +216,27 @@ namespace DynAbs.Aliasing.CS
         public void Assign(Term lhsTerm, Scope lhsScope, Term rhsTerm, Scope rhsScope)
         {
             var currentSet = aPt(rhsTerm, rhsScope) ?? new Dictionary<TypeKind, HashSet<PtgVertex>>();
+            
+            if (Globals.copy_global_assignments && rhsTerm.IsGlobal)
+                currentSet = Copy(currentSet, lhsTerm.Last.Symbol, null, false);
+
             Assign(lhsTerm, lhsScope, currentSet);
         }
 
         public void Assign(Term lhsTerm, Scope lhsScope, Dictionary<TypeKind, HashSet<PtgVertex>> rightSet, bool copyStructs = true, List<PtgVertex> exceptedStructs = null, bool strongUpdate = true)
         {
             if (copyStructs && lhsTerm.Last.Symbol.IsStruct)
-                rightSet = StructCopy(rightSet, exceptedStructs);
+                rightSet = Copy(rightSet, lhsTerm.Last.Symbol, exceptedStructs);
+
+            if (Globals.consider_readonly_modifiers && lhsTerm.IsReadOnly && rightSet != null)
+            {
+                var rsNodes = rightSet.SelectMany(x => x.Value).ToList();
+                var reachable = BFS(rsNodes, CSUtils.CreateReferenceComparedPTGHashSet());
+                reachable.UnionWith(rsNodes);
+
+                foreach (var r in reachable)
+                    r.IsReadOnly = true;
+            }
 
             if (lhsTerm.IsVar)
             {
@@ -341,6 +391,22 @@ namespace DynAbs.Aliasing.CS
             else
             {
                 var reads = GetR(receiver, arguments, returnValue, null, ad);
+
+                #region GetMode
+                if (Globals.get_mode_readonly_callback && ad.Annotation.GetAssign)
+                {
+                    if (receiver != null)
+                    {
+                        var rhsTerms = new List<Term>(arguments);
+                        rhsTerms.Add(receiver.AddingField(Field.SigmaField(returnValue.Last.Symbol)));
+                        MultipleAssign(returnValue, rhsTerms);
+                    }
+
+                    LastDef_Set(returnValue, (HashSet<uint>)reads, true);
+                    return;
+                }
+                #endregion
+
                 var dgv = GetDGNode(invocationPoint, reads);
                 var otherNodes = GetOtherNodes(dgv, ad, invocationPoint);
                 SetReturnValue(receiver, arguments, otherNodes, dgv, returnValue, ad, invocationPoint);
@@ -496,9 +562,14 @@ namespace DynAbs.Aliasing.CS
             var rv = SetExternalRV(returnValue, lastDef);
             var outRefParams = SetOutRefParams(allArgs.Where(x => x.ReferencedTerm != null && x.ReferencedTerm.IsOutOrRef));
 
-            var ALL = CSUtils.CreateReferenceComparedPTGHashSet(reachableNodes.Item1.SelectMany(x => x.Value));
+            var ALL = CSUtils.CreateReferenceComparedPTGHashSet(reachableNodes.Item1
+                .Where(x => !x.Key.Type.IsStruct)
+                .SelectMany(x => x.Value)
+                .Where(x => !x.IsReadOnly));
+
             ALL.UnionWith(outRefParams);
-            ALL.UnionWith(reachableNodes.Item2);
+            ALL.UnionWith(reachableNodes.Item2.Where(x => !x.IsReadOnly));
+
             //ALL.Add(region);
             if (rv != null)
                 ALL.Add(rv);
@@ -1393,7 +1464,11 @@ namespace DynAbs.Aliasing.CS
         #endregion
 
         #region Extras
-        public Dictionary<TypeKind, HashSet<PtgVertex>> StructCopy(Dictionary<TypeKind, HashSet<PtgVertex>> initNodes, List<PtgVertex> exceptedStructs = null)
+        public Dictionary<TypeKind, HashSet<PtgVertex>> Copy(
+            Dictionary<TypeKind, HashSet<PtgVertex>> initNodes, 
+            ISlicerSymbol lhsSymbol, 
+            List<PtgVertex> exceptedStructs = null,
+            bool onlyStructs = true)
         {
             // TODO STATIC (Just return the same but as multiple)
             var toUpdate = new Dictionary<PtgVertex, PtgVertex>();
@@ -1402,7 +1477,10 @@ namespace DynAbs.Aliasing.CS
 
             foreach (var tks in initNodes)
             {
-                if (!tks.Key.Type.IsStruct && !tks.Key.Type.IsObject)
+                if (onlyStructs && !tks.Key.Type.IsStruct && !tks.Key.Type.IsObject)
+                    continue;
+
+                if (!tks.Key.Compatibles(lhsSymbol))
                     continue;
 
                 if (!init.ContainsKey(tks.Key))

@@ -1,11 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using DynAbs.Tracing;
+using Microsoft.CodeAnalysis;
 
 namespace DynAbs
 {
@@ -163,7 +160,7 @@ namespace DynAbs
 
         public void DefUseOperation(ISet<Term> defTerms, ISet<Term> useTerms)
         {
-            // Case "int x, y, z = a + b" where x, y, z are "defs" and a, b as "uses".
+            // Caso "int x, y, z = a + b" tiene x, y, z como defs y a, b como usos.
             var dependencies = new HashSet<uint>();
             foreach (var useTerm in useTerms)
             {
@@ -172,8 +169,7 @@ namespace DynAbs
                     throw new UninitializedTerm(useTerm);
                 dependencies.UnionWith(useTermLastDef);
             }
-            // This includes the uses of the "set" (intermediate properties/fields).
-            // The last one is not included, since it's the one that is being assigned.
+            // Se incluyen los uses del SET hasta el último punto
             if (UserConfiguration.IncludeAllUses)
                 foreach (var defTerm in defTerms.Where(x => x.Count > 1))
                     dependencies.UnionWith(Solver.LastDef_Get(defTerm.DiscardLast()));
@@ -254,7 +250,7 @@ namespace DynAbs
             Solver.Havoc(@this, tempArgs, returnValue, this.AddDgVertex, annotationWithData, returnValue != null ? returnValue.Stmt : @this.Stmt);
         }
 
-        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null)
+        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null, bool getMode = false)
         {
             var summariesLanguageInfo = AnnotationsUtils.GetAnnotation(symbol, methodName);
             AnnotationWithData ad = null;
@@ -305,6 +301,10 @@ namespace DynAbs
 
                 ad = new AnnotationWithData(summariesLanguageInfo, dict, fieldsParameters);
             }
+
+            if (Globals.get_mode_readonly_callback && getMode)
+                ad.Annotation.GetAssign = true;
+
             LogCall(symbol, methodName);
             HandleNonInstrumentedMethod(argumentTermList, @this, returnValue, null, returnedValues, ad);
         }
@@ -323,16 +323,29 @@ namespace DynAbs
             HandleNonInstrumentedMethod(argumentTermList, @this, returnValue, null, returnedValues, new AnnotationWithData(summariesLanguageInfo, null, null));
         }
 
-        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue)
+        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue, bool getMode)
         {
+            if (Globals.get_mode_readonly_callback && getMode)
+            {
+                DefExternalOperation(returnValue);
+                Solver.MultipleAssign(returnValue, involvedTerms);
+                return;
+            }
+            
             AnnotationWithData ad = null;
             if (UserConfiguration.UseAnnotations && !UserConfiguration.MixedModes)
                 ad = new AnnotationWithData(AnnotationsUtils.GetPredefinedAnnotation("HavocWithoutGlobals_IsIn_Many"), null, null);
             HandleNonInstrumentedMethod(involvedTerms, null, returnValue, new List<Term>(), new List<Term>(), ad);
         }
 
-        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue)
+        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue, bool getMode)
         {
+            if (Globals.get_mode_readonly_callback && getMode)
+            {
+                Solver.WeakAssign(region, returnedValue);
+                return;
+            }
+
             AnnotationWithData ad = null;
             if (UserConfiguration.UseAnnotations && !UserConfiguration.MixedModes)
                 ad = new AnnotationWithData(AnnotationsUtils.GetPredefinedAnnotation("HavocWithoutGlobals_IsIn_Many"), null, null);

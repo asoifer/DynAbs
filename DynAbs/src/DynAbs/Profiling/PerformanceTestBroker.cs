@@ -180,7 +180,7 @@ namespace DynAbs
             GlobalPerformanceValues.BrokerValues.Times.AssignRV = GlobalPerformanceValues.BrokerValues.Times.AssignRV.Add(diff);
         }
 
-        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null)
+        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null, bool getMode = false)
         {
             if (symbol != null && symbol is IMethodSymbol)
             {
@@ -193,7 +193,7 @@ namespace DynAbs
             }
             GlobalPerformanceValues.BrokerValues.Counters.HandleNonInstrumentedMethod++;
             var start = DateTime.Now;
-            _broker.HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName);
+            _broker.HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName, getMode);
             var diff = DateTime.Now.Subtract(start);
             GlobalPerformanceValues.BrokerValues.Times.HandleNonInstrumentedMethod = GlobalPerformanceValues.BrokerValues.Times.HandleNonInstrumentedMethod.Add(diff);
         }
@@ -208,21 +208,21 @@ namespace DynAbs
                 GlobalPerformanceValues.BrokerValues.Times.HandleArrayInitialization.Add(diff);
         }
 
-        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue)
+        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue, bool getMode)
         {
             GlobalPerformanceValues.BrokerValues.Counters.CreateNonInstrumentedRegion++;
             var start = DateTime.Now;
-            _broker.CreateNonInstrumentedRegion(involvedTerms, returnValue);
+            _broker.CreateNonInstrumentedRegion(involvedTerms, returnValue, getMode);
             var diff = DateTime.Now.Subtract(start);
             GlobalPerformanceValues.BrokerValues.Times.CreateNonInstrumentedRegion =
                 GlobalPerformanceValues.BrokerValues.Times.CreateNonInstrumentedRegion.Add(diff);
         }
 
-        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue)
+        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue, bool getMode)
         {
             GlobalPerformanceValues.BrokerValues.Counters.CatchReturnedValueIntoRegion++;
             var start = DateTime.Now;
-            _broker.CatchReturnedValueIntoRegion(region, returnedValue);
+            _broker.CatchReturnedValueIntoRegion(region, returnedValue, getMode);
             var diff = DateTime.Now.Subtract(start);
             GlobalPerformanceValues.BrokerValues.Times.CatchReturnedValueIntoRegion =
                 GlobalPerformanceValues.BrokerValues.Times.CatchReturnedValueIntoRegion.Add(diff);

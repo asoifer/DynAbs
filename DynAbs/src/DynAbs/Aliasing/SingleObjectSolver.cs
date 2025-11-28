@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
+
 using Microsoft.CodeAnalysis;
-using QuikGraph;
-using StaticModeKey = System.String;
 
 namespace DynAbs
 {
@@ -305,5 +302,9 @@ namespace DynAbs
         {
             return term.IsGlobal ? GlobalScope : ScopeStack.Peek();
         }
+
+        // Get mode methods
+        public void MultipleAssign(Term lhsTerm, List<Term> rhsTerms) => throw new NotImplementedException();
+        public void WeakAssign(Term lhsTerm, Term rhsTerm) => throw new NotImplementedException();
     }
 }

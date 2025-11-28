@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.IO.Pipes;
-using System.Linq;
-using System.Text;
 
 namespace DynAbs.Tracing
 {
@@ -32,6 +28,8 @@ namespace DynAbs.Tracing
             foreach (var line in lines)
             {
                 var data = line.Split(separator);
+                if (data[0][0] == '#')
+                    continue;
                 var fileId = Convert.ToInt32(data[0]);
                 var traceType = (TraceType)Convert.ToInt32(data[1]);
                 var spanStart = Convert.ToInt32(data[2]);

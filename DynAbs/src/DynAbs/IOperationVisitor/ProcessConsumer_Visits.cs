@@ -1,10 +1,11 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+
 using DynAbs.Tracing;
 
 namespace DynAbs
@@ -646,7 +647,6 @@ namespace DynAbs
                     var tempTerm_new = recTerm.AddingField(e.Name, ISlicerSymbol.Create(e.Type, _typeArguments));
                     tempTerm_old.Stmt = tempTerm_new.Stmt = Utils.StmtFromSyntaxNode(((TupleExpressionSyntax)operation.Operand.Syntax).Arguments[i], _instrumentationResult);
                     _broker.Assign(tempTerm_new, tempTerm_old);
-
                 }
             }
             else if (_traceConsumer.HasNext() &&
@@ -654,11 +654,34 @@ namespace DynAbs
                     ((ObserveNextStatement().CSharpSyntaxNode is ConversionOperatorDeclarationSyntax) ||
                     (ObserveNextStatement().CSharpSyntaxNode.Parent is ConversionOperatorDeclarationSyntax)))
             {
-                var useTerms = new List<Term>() { CreateArgument(recTerm) };
-                var newTerm = _termFactory.Create(operation, ISlicerSymbol.Create(operation.Type), false, TermFactory.GetFreshName());
-                HandleInstrumentedMethod(operation, newTerm, useTerms, null);
-                return newTerm;
+                var conversionOperatorDeclarationSyntax = ((ObserveNextStatement().CSharpSyntaxNode is ConversionOperatorDeclarationSyntax) ? ObserveNextStatement().CSharpSyntaxNode : ObserveNextStatement().CSharpSyntaxNode.Parent) as ConversionOperatorDeclarationSyntax;
+                var semanticModel = _semanticModelsContainer.GetBySyntaxNode(conversionOperatorDeclarationSyntax);
+                var paramType = semanticModel.GetTypeInfo(conversionOperatorDeclarationSyntax.ParameterList.Parameters.First().Type).Type;
+                var argType = operation.Operand.Type;
+
+                var returnType = semanticModel.GetTypeInfo(conversionOperatorDeclarationSyntax.Type).Type;
+                var lhsType = operation.Type;
+
+                var isAssignable = TypesUtils.Compatibles(argType, paramType) && TypesUtils.Compatibles(returnType, lhsType);
+                if (isAssignable)
+                { 
+                    var useTerms = new List<Term>() { CreateArgument(recTerm) };
+                    var newTerm = _termFactory.Create(operation, ISlicerSymbol.Create(operation.Type), false, TermFactory.GetFreshName());
+                    HandleInstrumentedMethod(operation, newTerm, useTerms, null);
+                    return newTerm;
+                }
             }
+            var isException = convertionsWithCallbacks.Any(x =>
+                ((_originalStatement != null && x.Item1 == _originalStatement.FileId) || (_originalStatement == null && x.Item1 == _currentFileId)) &&
+                x.Item2 <= operation.Syntax.Span.Start && x.Item3 >= operation.Syntax.Span.End);
+            if (Utils.IsEnterMethodOrConstructor(_traceConsumer.ObserveNextStatement().TraceType) && isException)
+            {
+                var involvedTerms = new List<Term>() { CreateArgument(recTerm) };
+                var returnTerms = WaitForEnd((CSharpSyntaxNode)operation.Syntax, involvedTerms, operation.Type, "Conversion", null, false);
+                var newTerm = _termFactory.Create(operation, ISlicerSymbol.Create(operation.Type), false, TermFactory.GetFreshName());
+                _broker.HandleNonInstrumentedMethod(involvedTerms, null, returnTerms, newTerm, operation.Type, "Conversion");
+                return newTerm;
+            }    
             return recTerm;
         }
 
@@ -709,6 +732,7 @@ namespace DynAbs
                     var type = semanticModel.GetTypeInfo(identifier);
                     var symbol = semanticModel.GetSymbolInfo(identifier);
                     var isGlobal = ((FieldDeclarationSyntax)syntaxNode.Parent.Parent).Modifiers.Any(x => x.ToString() == "static" || x.ToString() == "const");
+                    var isReadOnly = ((FieldDeclarationSyntax)syntaxNode.Parent.Parent).Modifiers.Any(x => x.ToString() == "readonly");
                     var name = isGlobal ? Utils.GetRealName(semanticModel.GetDeclaredSymbol(syntaxNode).ToString(), _typeArguments) : identifier.Identifier.ValueText;
 
                     if (((VariableDeclaratorSyntax)syntaxNode).Initializer != null)
@@ -734,6 +758,7 @@ namespace DynAbs
                         else
                             _definedVariable = _termFactory.Create(syntaxNode, slicerType ?? recTerm.Last.Symbol, isGlobal, name);
                         _definedVariable.Stmt = Utils.StmtFromSyntaxNode(syntaxNode, _instrumentationResult);
+                        _definedVariable.IsReadOnly = isReadOnly;
 
                         // Possible implícit conversion
                         if (ObserveNextStatement().TraceType == TraceType.EnterStaticMethod &&
@@ -816,7 +841,7 @@ namespace DynAbs
             IDictionary<ITypeSymbol, ITypeSymbol> typesDictionary = null;
 
             bool isSetAccessor;
-            var hasGetAccesor = HasAccesor("", typesDictionary, out isSetAccessor) && !isSetAccessor; // TODOX: me sumo a cualquier get
+            var hasGetAccesor = HasAccesor("", typesDictionary, out isSetAccessor, out var accessorStmt) && !isSetAccessor; // TODOX: me sumo a cualquier get
 
             newTerm = recTerm.AddingField(new Field(/*hasGetAccesor ? (TODOX: si tenía nombre se lo ponía antes)*/ TermFactory.GetFreshName(), ISlicerSymbol.Create(operation.Type)));
             newTerm.Stmt = Utils.StmtFromSyntaxNode((CSharpSyntaxNode)operation.Syntax, _instrumentationResult);
@@ -833,7 +858,7 @@ namespace DynAbs
             {
                 var nextStmt = ObserveNextStatement();
                 if (newTerm.Count == 1)
-                    GetNextStatement(TraceType.EndMemberAccess);
+                    GetNextStatement(TraceType.EndMemberAccess, true, newTerm.Stmt.CSharpSyntaxNode);
                 else
                 {
                     var returnTerms = WaitForEnd(newTerm.Stmt.CSharpSyntaxNode, new List<Term>() { newTerm }, null, "INIT", TraceType.EndMemberAccess);
@@ -943,7 +968,7 @@ namespace DynAbs
                                 Term recTerm = null;
                                 IDictionary<ITypeSymbol, ITypeSymbol> typesDictionary = null;
                                 bool isSetAccessor;
-                                var hasGetAccesor = HasAccesor(localSymbolInfo.Name, typesDictionary, out isSetAccessor) && !isSetAccessor;
+                                var hasGetAccesor = HasAccesor(localSymbolInfo.Name, typesDictionary, out isSetAccessor, out var accessorStmt) && !isSetAccessor;
 
                                 var staticProp = ((IPropertySymbol)localSymbolInfo).IsStatic;
                                 var type = ((IPropertySymbol)localSymbolInfo).Type;
@@ -1012,7 +1037,7 @@ namespace DynAbs
                             Term recTerm = Visit(GetOperation(((MemberAccessExpressionSyntax)syntaxNode).Expression));
                             IDictionary<ITypeSymbol, ITypeSymbol> typesDictionary = null;
                             bool isSetAccessor;
-                            var hasGetAccesor = HasAccesor(((MemberAccessExpressionSyntax)syntaxNode).Name.Identifier.ValueText, typesDictionary, out isSetAccessor) && !isSetAccessor;
+                            var hasGetAccesor = HasAccesor(((MemberAccessExpressionSyntax)syntaxNode).Name.Identifier.ValueText, typesDictionary, out isSetAccessor, out var accessorStmt) && !isSetAccessor;
 
                             // TODO: Vamos a suponer que es false...
                             var staticProp = recTerm.IsGlobal;
@@ -1315,7 +1340,7 @@ namespace DynAbs
 
             bool isSetAssignment;
             if (operation.Target is IPropertyReferenceOperation &&
-                HasAccesor(((IPropertyReferenceOperation)operation.Target).Property.Name, null, out isSetAssignment))
+                HasAccesor(((IPropertyReferenceOperation)operation.Target).Property.Name, null, out isSetAssignment, out var accessorStmt))
             {
                 Term @this = null;
                 List<Term> arguments = null;
@@ -1376,7 +1401,7 @@ namespace DynAbs
             var use = Visit(operation.Value);
             bool isSetAssignment;
             if (operation.Target is IPropertyReferenceOperation &&
-                HasAccesor(((IPropertyReferenceOperation)operation.Target).Property.Name, null, out isSetAssignment, isIndexer) && isSetAssignment)
+                HasAccesor(((IPropertyReferenceOperation)operation.Target).Property.Name, null, out isSetAssignment, out var accessorStmt, isIndexer) && isSetAssignment)
             {
                 Term @this = null;
                 List<Term> arguments = null;
@@ -1706,7 +1731,7 @@ namespace DynAbs
                                 var property = ((IPropertyReferenceOperation)((ISimpleAssignmentOperation)init).Target).Property;
 
                                 bool isSetAssignment;
-                                if (HasAccesor(property.Name, null, out isSetAssignment))
+                                if (HasAccesor(property.Name, null, out isSetAssignment, out var accesorNode))
                                 {
                                     if (!isSetAssignment)
                                         throw new Exception("Deberia ser setAssginment y no es!");
@@ -1767,7 +1792,7 @@ namespace DynAbs
                         var property = ((IPropertyReferenceOperation)((ISimpleAssignmentOperation)init).Target).Property;
 
                         bool isSetAssignment;
-                        if (HasAccesor(property.Name, null, out isSetAssignment))
+                        if (HasAccesor(property.Name, null, out isSetAssignment, out var accessorStmt))
                         {
                             if (!isSetAssignment)
                                 throw new Exception("Deberia ser setAssginment y no es!");
@@ -2001,13 +2026,13 @@ namespace DynAbs
             var instructionStmt = GetNextStatement(TraceType.SimpleStatement);
             var recTerm = Visit(GetOperation((instructionStmt.CSharpSyntaxNode)));
 
-            Term[] uses = new Term[] { recTerm };
-            _broker.DefUseOperation(recTerm, uses);
+            var recTermInt = _termFactory.Create(instructionStmt.CSharpSyntaxNode, recTerm.Last.Symbol);
+            _broker.Assign(recTermInt, recTerm);
 
             // 4) Exit
             _broker.ExitCondition(enterConditionSyntaxNode);
 
-            return recTerm;
+            return recTermInt;
         }
 
         void VisitIfStatement(IConditionalOperation operation)
@@ -2412,7 +2437,25 @@ namespace DynAbs
                 recTerm = PatternOperationReceiver;
 
             bool isSetAccessor;
-            var hasGetAccesor = (!forSet) && HasAccesor(operation.Property.Name, typesDictionary, out isSetAccessor) && !isSetAccessor;
+            Stmt accessorStmt = null;
+            var hasGetAccesor = (!forSet) && HasAccesor(operation.Property.Name, typesDictionary, out isSetAccessor, out accessorStmt) && !isSetAccessor;
+            if (hasGetAccesor && 
+                Globals.get_mode_skip_get_body_trace && 
+                !operation.Property.GetMethod.ReceiverType.CustomIsStruct() && 
+                operation.Property.GetMethod.ReceiverType.ContainingAssembly.Name == Globals.core_assembly_name &&
+                accessorStmt.FileId < 1000)
+            {
+                var isSkipException = skipGetSkippingException.Any(x =>
+                    ((_originalStatement != null && x.Item1 == _originalStatement.FileId) || (_originalStatement == null && x.Item1 == _currentFileId)) &&
+                    x.Item2 == operation.Syntax.Span.Start && x.Item3 == operation.Syntax.Span.End);
+                if (!isSkipException)
+                {
+                    var traceFound = ConsumeUntil(accessorStmt.FileId, accessorStmt.CSharpSyntaxNode, TraceType.EnterFinalFinally, false);
+                    if (traceFound)
+                        GetNextStatement();
+                    hasGetAccesor = false;
+                }
+            }
 
             if (recTerm == null)
             {
@@ -2454,16 +2497,25 @@ namespace DynAbs
                 (operation.Syntax.Parent is ArgumentSyntax && ((ArgumentSyntax)operation.Syntax.Parent).RefOrOutKeyword.Value != null)))
             {
                 var nextStmt = ObserveNextStatement();
-                if (newTerm.Count == 1)
-                    GetNextStatement(TraceType.EndMemberAccess, false);
+
+                var isSpecialException = methodsExceptions.Any(x =>
+                    ((_originalStatement != null && x.Item1 == _originalStatement.FileId) || (_originalStatement == null && x.Item1 == _currentFileId)) &&
+                    x.Item2 <= operation.Syntax.Span.Start && x.Item3 >= operation.Syntax.Span.End);
+
+                if (newTerm.Count == 1 && !isSpecialException)
+                    GetNextStatement(TraceType.EndMemberAccess, false, (CSharpSyntaxNode)operation.Syntax);
                 else
                 {
-                    var returnTerms = WaitForEnd(newTerm.Stmt.CSharpSyntaxNode, new List<Term>() { newTerm }, operation.Property.GetMethod, null, TraceType.EndMemberAccess);
-
+                    var returnTerms = WaitForEnd((CSharpSyntaxNode)operation.Syntax, recTerm != null ? new List<Term>() { recTerm } : new List<Term>(), operation.Property.GetMethod, null, TraceType.EndMemberAccess);
                     if (!Globals.properties_as_fields || returnTerms.Count > 0)
-                        _broker.HandleNonInstrumentedMethod(new List<Term>(), newTerm.IsGlobal ? null : newTerm.DiscardLast(), returnTerms, newTerm, operation.Property.GetMethod);
+                    {
+                        newTerm = _termFactory.Create(operation, ISlicerSymbol.Create(operation.Type, _typeArguments), operation.Property.IsStatic, TermFactory.GetFreshName());
+                        _broker.HandleNonInstrumentedMethod(new List<Term>(), recTerm, returnTerms, newTerm, operation.Property.GetMethod, getMode: operation.Property.GetMethod?.MethodKind == MethodKind.PropertyGet);
+                    }
                 }
             }
+            else
+                TryConsume(_currentFileId, (CSharpSyntaxNode)operation.Syntax, TraceType.EndMemberAccess);
 
             return new Tuple<Term, Term>(recTerm, newTerm);
         }
@@ -2488,7 +2540,7 @@ namespace DynAbs
                 operation.Arguments.Count() == 1)
             {
                 bool isSetAccessor;
-                var hasGetAccesor = HasAccesor(operation.Property.Name, null, out isSetAccessor, true) && !isSetAccessor;
+                var hasGetAccesor = HasAccesor(operation.Property.Name, null, out isSetAccessor, out var accessorStmt, true) && !isSetAccessor;
 
                 var accesorSymbol = (IMethodSymbol)_semanticModelsContainer.GetBySyntaxNode(nextStmt.CSharpSyntaxNode).GetDeclaredSymbol(nextStmt.CSharpSyntaxNode);
                 newTerm = _termFactory.Create(operation, ISlicerSymbol.Create(accesorSymbol.ReturnType, _typeArguments), false, TermFactory.GetFreshName());
@@ -2516,7 +2568,7 @@ namespace DynAbs
                     _broker.DefUseOperation(newTerm,
                         operation.Arguments.Select(x => Visit(x)).Union(new Term[] { recTerm }).ToArray());
                     // TODO: False only with structs... (and not exceptions)
-                    GetNextStatement(TraceType.EndMemberAccess, false);
+                    GetNextStatement(TraceType.EndMemberAccess, false, (CSharpSyntaxNode)operation.Syntax);
                 }
                 else
                 {
@@ -2538,25 +2590,18 @@ namespace DynAbs
                         if (forSet)
                             return new Tuple<Term, List<Term>>(recTerm, dependentTerms);
                         else
-                        {
-                            newTerm = _termFactory.Create(operation, ISlicerSymbol.Create(operation.Type, _typeArguments));
-                            _broker.HandleNonInstrumentedMethod(dependentTerms, recTerm, new List<Term>(), newTerm, operation.Property.GetMethod);
-                        }
+                            newTerm = _termFactory.Create(operation, ISlicerSymbol.Create(operation.Type, _typeArguments), false, TermFactory.GetFreshName(), true, false);
                     }
 
+                    var returnTerms = new List<Term>();
+                    var symbol = forSet ? operation.Property.SetMethod : operation.Property.GetMethod;
                     var isException = structsExceptions.Any(x =>
                         ((_originalStatement != null && x.Item1 == _originalStatement.FileId) || (_originalStatement == null && x.Item1 == _currentFileId)) &&
                         x.Item2 < operation.Syntax.Span.Start && x.Item3 > operation.Syntax.Span.End);
                     if (Globals.wrap_structs_calls || isException || !(operation.Property.GetMethod?.ReceiverType.CustomIsStruct() ?? false))
-                    {
-                        if (ObserveNextStatement().TraceType != TraceType.EndMemberAccess)
-                        {
-                            var returnTerms = WaitForEnd(recTerm.Stmt.CSharpSyntaxNode, new List<Term>() { recTerm }, operation.Property, null, TraceType.EndMemberAccess);
-                            _broker.HandleNonInstrumentedMethod(dependentTerms, recTerm, returnTerms, newTerm, operation.Property);
-                        }
-                        else
-                            GetNextStatement(TraceType.EndMemberAccess);
-                    }
+                        returnTerms.AddRange(WaitForEnd((CSharpSyntaxNode)operation.Syntax, new List<Term>() { recTerm }, symbol, null, TraceType.EndMemberAccess));
+                    
+                    _broker.HandleNonInstrumentedMethod(dependentTerms, recTerm, returnTerms, newTerm, symbol, getMode: symbol?.MethodKind == MethodKind.PropertyGet);                    
                 }
             }
             return new Tuple<Term, List<Term>>(newTerm, null);
@@ -2623,7 +2668,7 @@ namespace DynAbs
             IDictionary<ITypeSymbol, ITypeSymbol> typesDictionary = null;
 
             bool isSetAccessor;
-            var hasGetAccesor = (!forSet) && HasAccesor(operation.MemberName, typesDictionary, out isSetAccessor) && !isSetAccessor;
+            var hasGetAccesor = (!forSet) && HasAccesor(operation.MemberName, typesDictionary, out isSetAccessor, out var accessorStmt) && !isSetAccessor;
 
             // TODO: Chequear que sucede con los dynamic types
 
