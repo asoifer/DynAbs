@@ -1,11 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Operations;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using DynAbs.Tracing;
+
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace DynAbs
 {
@@ -46,11 +43,12 @@ namespace DynAbs
         #endregion
 
         #region Aux
-        public static int lineNumber = 662;
-        public static int fileId = 959;
+        public static int lineNumber = 297;
+        public static int fileId = 146;
 
-        public static int spanStart = 2704; 
-        public static int spanEnd = 2713;
+        public static int spanStart = 57602;
+        public static int spanEnd = 57644;
+
         #region Exceptions
         static string[] ClosingMethods = new string[] { "Dispose", "Close", "RemoveTemporaryDirectory" };
 
@@ -64,6 +62,7 @@ namespace DynAbs
             new Tuple<int, int, int>(98, 2309, 2344),
             new Tuple<int, int, int>(98, 1812, 1847),
             new Tuple<int, int, int>(420, 16194, 16256),
+            new Tuple<int, int, int>(10004, 3502, 3536),
         };
 
         static List<Tuple<int, int, int>> structsExceptions = new List<Tuple<int, int, int>>() {
@@ -75,8 +74,9 @@ namespace DynAbs
             new Tuple<int, int, int>(10073, 105776, 105890),
             new Tuple<int, int, int>(10319, 32472, 32517),
             new Tuple<int, int, int>(10064, 1017, 1102),
+            new Tuple<int, int, int>(10030, 4689, 4714),
             new Tuple<int, int, int>(10030, 10447, 10459),
-            new Tuple<int, int, int>(10030, 10472, 10484),
+            new Tuple<int, int, int>(10030, 10472, 10484),            
             new Tuple<int, int, int>(10052, 44037, 44091),
             new Tuple<int, int, int>(10073, 105920, 106034),
             new Tuple<int, int, int>(10052, 43043, 43108),
@@ -214,6 +214,8 @@ namespace DynAbs
             new Tuple<int, int, int>(10593, 280567, 280599),
             new Tuple<int, int, int>(10218, 93682, 93718),
             new Tuple<int, int, int>(706, 6063, 6085),
+            new Tuple<int, int, int>(10003, 38370, 38391),
+            new Tuple<int, int, int>(10003, 158800, 158831),
             new Tuple<int, int, int>(10003, 404701, 404727),
             new Tuple<int, int, int>(415, 111612, 111627),
             new Tuple<int, int, int>(415, 112176, 112191),
@@ -224,6 +226,12 @@ namespace DynAbs
             new Tuple<int, int, int>(10593, 211127, 211149),
             new Tuple<int, int, int>(10593, 133508, 133526),
             new Tuple<int, int, int>(10593, 133508, 133526),
+
+            new Tuple<int, int, int>(10593, 133633, 133782),
+            new Tuple<int, int, int>(10593, 24732, 24752),
+            new Tuple<int, int, int>(10593, 24879, 24907),
+            new Tuple<int, int, int>(10593, 270177, 270197),
+
             new Tuple<int, int, int>(10593, 133814, 133836),
             new Tuple<int, int, int>(55, 2243, 2253),
             new Tuple<int, int, int>(10198, 23010, 23055),
@@ -235,7 +243,31 @@ namespace DynAbs
             new Tuple<int, int, int>(499, 162997, 163048),
             new Tuple<int, int, int>(10206, 1489, 1516),
             new Tuple<int, int, int>(10206, 1246, 1278),
-            new Tuple<int, int, int>(10206, 1022, 1054)
+            new Tuple<int, int, int>(10206, 1022, 1054),
+            new Tuple<int, int, int>(10044, 28017, 28032),
+            new Tuple<int, int, int>(10235, 9485, 9512),
+
+            new Tuple<int, int, int>(201, 966, 984),
+            new Tuple<int, int, int>(201, 985, 997),
+            new Tuple<int, int, int>(201, 1106, 1130),
+            new Tuple<int, int, int>(201, 1131, 1149),
+            new Tuple<int, int, int>(201, 1309, 1328),
+            new Tuple<int, int, int>(201, 1329, 1342),
+            new Tuple<int, int, int>(10319, 43910, 43937),
+            new Tuple<int, int, int>(10319, 45973, 45995),
+            new Tuple<int, int, int>(10319, 57617, 57644),
+        };
+
+        static List<Tuple<int, int, int>> convertionsWithCallbacks = new List<Tuple<int, int, int>>()
+        {
+            new Tuple<int, int, int>(10003, 71391, 71455),
+            new Tuple<int, int, int>(10003, 71473, 71536),
+            new Tuple<int, int, int>(10003, 71554, 71637)
+        };
+
+        static List<Tuple<int, int, int>> skipGetSkippingException = new List<Tuple<int, int, int>>() 
+        {
+            new Tuple<int, int, int>(145, 86355, 86368)
         };
         #endregion
         #endregion
