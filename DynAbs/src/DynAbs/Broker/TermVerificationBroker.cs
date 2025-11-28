@@ -139,18 +139,18 @@ namespace DynAbs
             _broker.AssignRV(returnValue);
         }
 
-        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null)
+        public void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null, bool getMode = false)
         {
             argumentTermList.ForEach(x => CheckTerm(x));
             returnedValues.ForEach(x => CheckTerm(x));
             CheckTerm(@this);
             CheckTerm(returnValue);
-            _broker.HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName);
+            _broker.HandleNonInstrumentedMethod(argumentTermList, @this, returnedValues, returnValue, symbol, methodName, getMode);
         }
 
-        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue)
+        public void CatchReturnedValueIntoRegion(Term region, Term returnedValue, bool getMode)
         {
-            _broker.CatchReturnedValueIntoRegion(region, returnedValue);
+            _broker.CatchReturnedValueIntoRegion(region, returnedValue, getMode);
         }
 
         public void HandleArrayInitialization(List<Term> argumentTermList, List<Term> returnedValues, Term returnValue)
@@ -160,11 +160,11 @@ namespace DynAbs
             _broker.HandleArrayInitialization(argumentTermList, returnedValues, returnValue);
         }
 
-        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue)
+        public void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue, bool getMode)
         {
             involvedTerms.ForEach(x => CheckTerm(x));
             CheckTerm(returnValue);
-            _broker.CreateNonInstrumentedRegion(involvedTerms, returnValue);
+            _broker.CreateNonInstrumentedRegion(involvedTerms, returnValue, getMode);
         }
 
         public void CustomEvent(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, string EventName)

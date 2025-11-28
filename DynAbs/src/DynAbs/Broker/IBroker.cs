@@ -48,13 +48,13 @@ namespace DynAbs
 
         void AssignRV(Term returnValue);
 
-        void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null);
+        void HandleNonInstrumentedMethod(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, ISymbol symbol, string methodName = null, bool getMode = false);
 
         void HandleArrayInitialization(List<Term> argumentTermList, List<Term> returnedValues, Term returnValue);
 
-        void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue);
+        void CreateNonInstrumentedRegion(List<Term> involvedTerms, Term returnValue, bool getMode);
 
-        void CatchReturnedValueIntoRegion(Term region, Term returnedValue);
+        void CatchReturnedValueIntoRegion(Term region, Term returnedValue, bool getMode);
 
         void CustomEvent(List<Term> argumentTermList, Term @this, List<Term> returnedValues, Term returnValue, string EventName);
 
