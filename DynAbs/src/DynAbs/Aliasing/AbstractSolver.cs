@@ -1065,5 +1065,11 @@ namespace DynAbs
             return b;
         }
         #endregion
+
+        #region Get mode methods
+        public void MultipleAssign(Term lhsTerm, List<Term> rhsTerms) => throw new NotImplementedException();
+
+        public void WeakAssign(Term lhsTerm, Term rhsTerm) => throw new NotImplementedException();
+        #endregion
     }
 }
