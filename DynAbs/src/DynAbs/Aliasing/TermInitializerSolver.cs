@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace DynAbs
 {
@@ -39,6 +38,32 @@ namespace DynAbs
             {
                 InitializeTerm(uninitializedTerm.Term);
                 AliasingSolver.Assign(term1, term2);
+            }
+        }
+
+        public void MultipleAssign(Term term1, List<Term> terms)
+        {
+            try
+            {
+                AliasingSolver.MultipleAssign(term1, terms);
+            }
+            catch (UninitializedTerm uninitializedTerm)
+            {
+                InitializeTerm(uninitializedTerm.Term);
+                AliasingSolver.MultipleAssign(term1, terms);
+            }
+        }
+
+        public void WeakAssign(Term term1, Term term2)
+        {
+            try
+            {
+                AliasingSolver.WeakAssign(term1, term2);
+            }
+            catch (UninitializedTerm uninitializedTerm)
+            {
+                InitializeTerm(uninitializedTerm.Term);
+                AliasingSolver.WeakAssign(term1, term2);
             }
         }
 

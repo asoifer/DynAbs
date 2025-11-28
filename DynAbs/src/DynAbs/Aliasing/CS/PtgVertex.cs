@@ -12,6 +12,7 @@ namespace DynAbs.Aliasing.CS
         public TypeKind TypeKind { get; set; }
         public bool IsMinType { get; set; }
         public bool IsMultiple { get; set; }
+        public bool IsReadOnly { get; set; }
         public int Rank { get; set; }
         public PtgVertex Parent { get; set; }
         public Cluster Rep { get; set; }
@@ -21,6 +22,7 @@ namespace DynAbs.Aliasing.CS
             TypeKind = typeKind;
             IsMinType = true;
             IsMultiple = false;
+            IsReadOnly = false;
             Parent = this;
             Rank = 0;
             Rep = new Cluster(TypeKind, true);
@@ -31,6 +33,7 @@ namespace DynAbs.Aliasing.CS
             TypeKind = typeKind;
             IsMinType = !multiple;
             IsMultiple = multiple;
+            IsReadOnly = false;
             Parent = this;
             Rank = 0;
             Rep = new Cluster(TypeKind, !multiple);
@@ -41,6 +44,7 @@ namespace DynAbs.Aliasing.CS
             TypeKind = other.TypeKind;
             IsMinType = other.IsMinType;
             IsMultiple = other.IsMultiple;
+            IsReadOnly = false;
             Rank = 0;
             Parent = this;
             Rep = new Cluster(TypeKind, !IsMultiple);

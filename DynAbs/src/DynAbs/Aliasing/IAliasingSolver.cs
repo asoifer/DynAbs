@@ -11,6 +11,10 @@ namespace DynAbs
 
         void Alloc(Term term, bool @override = true, string kind = null);
 
+        void MultipleAssign(Term lhsTerm, List<Term> rhsTerms);
+
+        void WeakAssign(Term lhsTerm, Term rhsTerm);
+
         void Assign(Term term1, Term term2);
 
         void RedefineType(Term term);

@@ -1,9 +1,6 @@
-﻿using Microsoft.CodeAnalysis;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DynAbs
 {
@@ -178,5 +175,9 @@ namespace DynAbs
             foreach (var ptg in solvers)
                 ptg.SaveResults(graphEvolutionFile, internalProfileFile);
         }
+
+        // Get mode methods
+        public void MultipleAssign(Term term1, List<Term> terms) => throw new NotImplementedException();
+        public void WeakAssign(Term term1, Term term2) => throw new NotImplementedException();
     }
 }
