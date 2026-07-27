@@ -107,7 +107,7 @@ namespace DynAbs
             public DependencyGraphKind dependencyGraph { get; set; }
         }
 
-        public enum MemoryModelKind 
+        public enum MemoryModelKind
         {
             Clusters,
             Default,
