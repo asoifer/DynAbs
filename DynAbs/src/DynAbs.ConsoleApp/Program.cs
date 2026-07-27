@@ -96,7 +96,7 @@ class Program
     static void ExecuteConfiguration(string pathOrFileName, UserConfiguration userConfiguration, List<string> filesOK, List<string> filesWrong)
     {
         Globals.skip_trace_enabled = foldersToSkip != null || foldersToAnalyze != null || (userConfiguration.customization?.skipTraceEnabled == true);
-        Globals.loops_optimization_enabled = userConfiguration.customization.loopsOptimization;
+        Globals.loops_optimization_enabled = userConfiguration.customization?.loopsOptimization == true;
 
         if (userConfiguration.FoldersToSkip == null && foldersToSkip != null && foldersToSkip.Any())
             userConfiguration.FoldersToSkip = foldersToSkip.Select(x => new UserConfiguration.Folder() { name = x }).ToArray();
@@ -118,7 +118,10 @@ class Program
                     targetProject.files[i].skip = !(foldersToAnalyze.Any(x => targetProject.files[i].name.Contains(x)));
 
         if (Globals.include_all_uses.HasValue)
+        {
+            userConfiguration.customization ??= new UserConfiguration.Customization();
             userConfiguration.customization.includeAllUses = Globals.include_all_uses.Value;
+        }
 
         if (defaultOrchestrator == null || !useSameCompilation)
             defaultOrchestrator = new Orchestrator(userConfiguration);
