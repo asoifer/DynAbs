@@ -51,6 +51,9 @@ namespace DynAbs
             return dg.GetSlices();
         }
 
+        public uint VertexCount => dg.VertexCount;
+        public uint EdgeCount => dg.EdgeCount;
+
         public void PrintGraph(string writeToFile)
         {
             dg.PrintGraph(writeToFile);
