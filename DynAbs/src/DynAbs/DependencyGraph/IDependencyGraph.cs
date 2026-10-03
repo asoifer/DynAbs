@@ -1,10 +1,6 @@
-﻿using QuikGraph;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using DynAbs.Tracing;
+﻿using System.Collections.Generic;
+
+using QuikGraph;
 
 namespace DynAbs
 {
@@ -12,13 +8,15 @@ namespace DynAbs
     {
         uint AddVertex(Stmt stmt, ISet<uint> edges);
         uint CriteriaVertex { get; set; }
-        // Uno pide el slice en base a la última línea, otro pide todos los reachables de cada nodo
+        
         ISet<Stmt> Slice();
         List<ISet<Stmt>> GetSlices();
         List<AdjacencyGraph<string, Edge<string>>> GetDependenciesGraphs();
         AdjacencyGraph<string, Edge<string>> GetCompleteDependencyGraph();
         IDictionary<string, string> GetVertexLabels();
 
+        uint VertexCount { get; }
+        uint EdgeCount { get; }
         void PrintGraph(string writeToFile);
     }
 }
