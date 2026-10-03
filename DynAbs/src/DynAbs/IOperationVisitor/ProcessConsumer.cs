@@ -334,7 +334,7 @@ namespace DynAbs
                     _traceConsumer.SliceCriteriaReached(currentStatement))
                 {
                     _broker.Slice(new ResultSummaryData(currentStatement.FileName, currentStatement.Line,
-                        _traceConsumer, _executedStatements, DateTime.Now.Subtract(Globals.start_time)));
+                        _traceConsumer, _executedStatements, DateTime.Now.Subtract(Globals.start_time), _broker.DependencyGraph.VertexCount, _broker.DependencyGraph.EdgeCount));
 
                     if (_configuration.User.criteria.mode != UserConfiguration.Criteria.CriteriaMode.AtEndWithCriteria
                         && _traceConsumer.RemoveCriteria())
