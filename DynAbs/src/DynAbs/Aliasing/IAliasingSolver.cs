@@ -46,5 +46,7 @@ namespace DynAbs
         void DumpPTG(string path, string label = null, bool globalScope = false, string key = null);
 
         void SaveResults(string graphEvolutionFile, string internalProfileFile);
+
+        void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges);
     }
 }

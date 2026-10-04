@@ -980,6 +980,8 @@ namespace DynAbs
 
         public virtual void SaveResults(string graphEvolutionFile, string internalProfileFile) { }
 
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges) => throw new NotImplementedException();
+
         public int cantidad_compatibles = 0;
         public int cantidad_compatibles_vuelta = 0;
         public int cantidad_no_compatibles = 0;

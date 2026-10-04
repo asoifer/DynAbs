@@ -1578,6 +1578,32 @@ namespace DynAbs.Aliasing.CS
                         d1[tk2.Key].UnionWith(tk2.Value);
         }
 
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges)
+        {
+            // Step 1: Get all nodes pointed by all scopes
+            var vertices = CSUtils.CreateReferenceComparedPTGHashSet();
+            foreach (var scope in LocalStack.Union(new Scope[] { Global }))
+            {
+                foreach (var term in scope.PointsTo)
+                {
+                    foreach (var node in term.Value)
+                    {
+                        vertices.UnionWith(node.Value);
+                    }
+                }
+            }
+
+            // Step 2: Full BFS
+            var visited = CSUtils.CreateReferenceComparedPTGHashSet();
+            var bfs = BFS(vertices, visited);
+            vertices.UnionWith(bfs);
+
+            // Step 3: Count
+            totalNodes = (uint)vertices.Count;
+            totalRegions = (uint)vertices.Count(x => x.IsMultiple);
+            totalEdges = (uint)vertices.Sum(x => x.Rep.Targets.Sum(y => y.Value.Sum(z => z.Value.Count)));
+        }
+
         #region StaticMode Extras
         public StaticModeKey GetTermKey(Stmt stmt)
         {
