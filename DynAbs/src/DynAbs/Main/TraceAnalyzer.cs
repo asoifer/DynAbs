@@ -49,7 +49,7 @@ public class TraceAnalyzer
                 if (sliceCriteriaReached)
                 {
                     var Data = new ResultSummaryData(nextStmt.FileName, nextStmt.Line, _traceConsumer, 
-                        _executedStatements, DateTime.Now.Subtract(Globals.start_time), 0, 0);
+                        _executedStatements, DateTime.Now.Subtract(Globals.start_time));
                     SlicesSummaryData.Add(Data);
                     if (_traceConsumer.RemoveCriteria())
                         break; ;

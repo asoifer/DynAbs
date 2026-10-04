@@ -306,5 +306,12 @@ namespace DynAbs
         // Get mode methods
         public void MultipleAssign(Term lhsTerm, List<Term> rhsTerms) => throw new NotImplementedException();
         public void WeakAssign(Term lhsTerm, Term rhsTerm) => throw new NotImplementedException();
+
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges)
+        {
+            totalNodes = 1;
+            totalRegions = 1;
+            totalEdges = 1;
+        }
     }
 }

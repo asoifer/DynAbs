@@ -18,38 +18,76 @@ public class ResultSummaryData
     public ISet<Stmt> SlicedStatements { get; set; }
 
     public TimeSpan ElapsedTime { get; }
-    public uint VertexCounter { get; }
-    public uint EdgeCounter { get; }
+    public uint DDGVerticesCount { get; }
+    public uint DDGEdgesCount { get; }
+    public uint MemoryModelVerticesCount { get; }
+    public uint MemoryModelRegionsCount { get; }
+    public uint MemoryModelEdgesCount { get; }
     #endregion
 
     #region Constructors
-    public ResultSummaryData(string filePath, int line, ITraceConsumer traceConsumer, ExecutedStatementsContainer container, TimeSpan elapsedTimeFromTheBeginning, uint vertexCounter, uint edgeCounter)
+    public ResultSummaryData(string filePath,
+        int line,
+        ITraceConsumer traceConsumer,
+        ExecutedStatementsContainer container,
+        TimeSpan elapsedTimeFromTheBeginning) : this((string?)filePath, (int?)line, null, traceConsumer, container, null, null, elapsedTimeFromTheBeginning)
     {
-        FilePath = filePath;
-        Line = line;
-        TotalTraceLines = traceConsumer.TotalTracedLines;
-        TotalSkippedTrace = traceConsumer.TraceReceiver is LOTraceReceiver ? ((LOTraceReceiver)traceConsumer.TraceReceiver).SkippedCounter : (double?)null;
-        TotalReceivedTrace = traceConsumer.TraceReceiver is LOTraceReceiver ? ((LOTraceReceiver)traceConsumer.TraceReceiver).Past.Count : (double?)null;
-        DistinctStatements = container.DistinctExecutedLines;
-        TotalStatements = container.ExecutedStatmentsCounter;
-        ElapsedTime = elapsedTimeFromTheBeginning;
-        VertexCounter = vertexCounter;
-        EdgeCounter = edgeCounter;
+
     }
 
-    public ResultSummaryData(ITraceConsumer traceConsumer, ExecutedStatementsContainer container, TimeSpan elapsedTimeFromTheBeginning, uint vertexCounter, uint edgeCounter)
+    public ResultSummaryData(string filePath, 
+        int line, 
+        UserSliceConfiguration userConfiguration, 
+        ITraceConsumer traceConsumer, 
+        ExecutedStatementsContainer container,
+        IDependencyGraph dependencyGraph,
+        IAliasingSolver aliasingSolver,
+        TimeSpan elapsedTimeFromTheBeginning) : this((string?)filePath, (int?)line, userConfiguration, traceConsumer, container, dependencyGraph, aliasingSolver, elapsedTimeFromTheBeginning)
     {
-        FilePath = null;
-        Line = 0;
-        SlicedStatements = new HashSet<Stmt>();
+        
+    }
+
+    public ResultSummaryData(UserSliceConfiguration userConfiguration, 
+        ITraceConsumer traceConsumer, 
+        ExecutedStatementsContainer container,
+        IDependencyGraph dependencyGraph,
+        IAliasingSolver aliasingSolver,
+        TimeSpan elapsedTimeFromTheBeginning) : this((string?)null, (int?)0, userConfiguration, traceConsumer, container, dependencyGraph, aliasingSolver, elapsedTimeFromTheBeginning)
+    {
+        
+    }
+
+    ResultSummaryData(string? filePath,
+        int? line,
+        UserSliceConfiguration userConfiguration,
+        ITraceConsumer traceConsumer,
+        ExecutedStatementsContainer container,
+        IDependencyGraph dependencyGraph,
+        IAliasingSolver aliasingSolver,
+        TimeSpan elapsedTimeFromTheBeginning)
+    {
+        FilePath = filePath;
+        Line = line ?? 0;
         TotalTraceLines = traceConsumer.TotalTracedLines;
         TotalSkippedTrace = traceConsumer.TraceReceiver is LOTraceReceiver ? ((LOTraceReceiver)traceConsumer.TraceReceiver).SkippedCounter : (double?)null;
         TotalReceivedTrace = traceConsumer.TraceReceiver is LOTraceReceiver ? ((LOTraceReceiver)traceConsumer.TraceReceiver).Past.Count : (double?)null;
         DistinctStatements = container.DistinctExecutedLines;
         TotalStatements = container.ExecutedStatmentsCounter;
         ElapsedTime = elapsedTimeFromTheBeginning;
-        VertexCounter = vertexCounter;
-        EdgeCounter = edgeCounter;
+
+        DDGVerticesCount = dependencyGraph?.VertexCount ?? 0;
+        DDGEdgesCount = dependencyGraph?.EdgeCount ?? 0;
+
+        MemoryModelVerticesCount = 0;
+        MemoryModelRegionsCount = 0;
+        MemoryModelEdgesCount = 0;
+        if (userConfiguration?.ComputeMemoryModelSize == true && aliasingSolver != null)
+        {
+            aliasingSolver.MeasureMemoryModelSize(out var mmTotalNodes, out var mmTotalRegions, out var mmTotalEdges);
+            MemoryModelVerticesCount = mmTotalNodes;
+            MemoryModelRegionsCount = mmTotalRegions;
+            MemoryModelEdgesCount = mmTotalEdges;
+        }
     }
     #endregion
 }
