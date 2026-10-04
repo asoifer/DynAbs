@@ -39,7 +39,7 @@ namespace DynAbs
 
         public static bool CustomIsStruct(this ITypeSymbol typeSymbol) 
         {
-            return typeSymbol.TypeKind == TypeKind.Struct && !Utils.HasDefaultValue(typeSymbol);
+            return typeSymbol != null && typeSymbol.TypeKind == TypeKind.Struct && !Utils.HasDefaultValue(typeSymbol);
         }
 
         public static bool CustomStructReceiver(this IMethodSymbol methodSymbol)
