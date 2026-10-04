@@ -980,7 +980,28 @@ namespace DynAbs
 
         public virtual void SaveResults(string graphEvolutionFile, string internalProfileFile) { }
 
-        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges) => throw new NotImplementedException();
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges)
+        {
+            // Step 1: Get all nodes pointed by all scopes
+            var vertices = SolverUtils.CreateReferenceComparedPTGHashSet();
+            foreach (var scope in scopeStack.Union(new ScopeContainer[] { globalScope }))
+            {
+                foreach (var term in scope.EntryPointVerticesDict)
+                {
+                    vertices.UnionWith(term.Value.VertexSet);
+                }
+            }
+
+            // Step 2: Full BFS
+            var visited = SolverUtils.CreateReferenceComparedPTGHashSet();
+            FullBFS(vertices, visited);
+            vertices.UnionWith(visited);
+
+            // Step 3: Count
+            totalNodes = (uint)vertices.Count;
+            totalRegions = (uint)vertices.Count(x => x.VertexType == VertexType.Hub);
+            totalEdges = (uint)vertices.Sum(x => x.CommonVertex.Sum(y => y.Value.Count) + x.SigmaVertex.Count + x.LambdaVertex.Count);
+        }
 
         public int cantidad_compatibles = 0;
         public int cantidad_compatibles_vuelta = 0;
