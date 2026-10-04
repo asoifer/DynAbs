@@ -187,6 +187,11 @@ namespace DynAbs
             AliasingSolver.SaveResults(graphEvolutionFile, internalProfileFile);
         }
 
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges)
+        {
+            AliasingSolver.MeasureMemoryModelSize(out totalNodes, out totalRegions, out totalEdges);
+        }
+
         public void InitializeTerm(Term term)
         {
             if (!term.IsGlobal)

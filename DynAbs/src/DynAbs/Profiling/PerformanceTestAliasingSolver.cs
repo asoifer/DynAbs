@@ -190,5 +190,10 @@ namespace DynAbs
         {
             solver.SaveResults(graphEvolutionFile, internalProfileFile);
         }
+
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges)
+        {
+            solver.MeasureMemoryModelSize(out totalNodes, out totalRegions, out totalEdges);
+        }
     }
 }

@@ -230,8 +230,11 @@ public class Orchestrator
             var skippedTrace = totalSkippedTrace.HasValue ? totalSkippedTrace.ToString() : "";
             var skippedLinesPercent = totalSkippedTrace.HasValue ? Math.Round(totalSkippedTrace.Value * (double)100 / totalReceivedTrace.Value, 0).ToString() : "";
             var traceSize = traceFilePath != null ? Math.Round(new FileInfo(traceFilePath).Length / (double)1024).ToString() : "";
-            var ddgVertexCounter = data.VertexCounter;
-            var ddgEdgeCounter = data.EdgeCounter;
+            var ddgVertexCounter = data.DDGVerticesCount;
+            var ddgEdgeCounter = data.DDGEdgesCount;
+            var mmVertexCounter = data.MemoryModelVerticesCount;
+            var mmRegionCounter = data.MemoryModelRegionsCount;
+            var mmEdgeCounter = data.MemoryModelEdgesCount;
 
             if (printResult)
             {     
@@ -243,16 +246,19 @@ public class Orchestrator
                 Console.WriteLine("#Stmt Slice: " + slicedStatements);
                 Console.WriteLine("#Trace lines: " + totalTraceLines);
                 Console.WriteLine("#Skipped trace lines: " + (!totalSkippedTrace.HasValue ? "-" : string.Format("{0}/{1} ({2}%)", totalSkippedTrace, totalReceivedTrace, skippedLinesPercent)));
-                Console.WriteLine("#Vertex: " + ddgVertexCounter);
-                Console.WriteLine("#Edge: " + ddgEdgeCounter);
+                Console.WriteLine("#DDG Vertices: " + ddgVertexCounter);
+                Console.WriteLine("#DDG Edges: " + ddgEdgeCounter);
+                Console.WriteLine("#MM Singles: " + (mmVertexCounter - mmRegionCounter));
+                Console.WriteLine("#MM Regions: " + mmRegionCounter);
+                Console.WriteLine("#MM Edges: " + mmEdgeCounter);
                 Console.WriteLine("----------------------------");
             }
 
-            // Nombre|Inputs|#Stmt|#UniqueStmt|#Slice|T. Instr|T. traza|T. Ejecución|Size Traza|Traza Total|Traza Salteada|%Salteado
+            // Nombre|Inputs|#Stmt|#UniqueStmt|#Slice|T. Instr|T. traza|T. Ejecución|Size Traza|Traza Total|Traza Salteada|%Salteado|DDG Vertices|DDG Edges|MM Vertices|MM Regions|MM Edges
             if (!string.IsNullOrWhiteSpace(Configuration.User.results.summaryResultFile))
                 System.IO.File.AppendAllLines(string.Format(Configuration.User.results.summaryResultFile, instanceNumber),
                     new string[] { $"{programName}|{arguments}|{totalStatementsLines}|{distinctStatementLines}|{slicedStatements}|{TotalSecondsInstrumentation}|" +
-                                        $"{localGenerationTraceTime}|{executionSeconds}|{traceSize}|{totalTraceLines}|{skippedTrace}|{skippedLinesPercent}|{ddgVertexCounter}|{ddgEdgeCounter}" });
+                                        $"{localGenerationTraceTime}|{executionSeconds}|{traceSize}|{totalTraceLines}|{skippedTrace}|{skippedLinesPercent}|{ddgVertexCounter}|{ddgEdgeCounter}|{mmVertexCounter}|{mmRegionCounter}|{mmEdgeCounter}" });
         }
         #endregion
 
