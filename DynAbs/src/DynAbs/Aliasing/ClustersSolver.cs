@@ -835,11 +835,12 @@ namespace DynAbs.Aliasing.CS
                 if (visited.Contains(v))
                     continue;
 
-                foreach (var t in v.Rep.Targets)
-                    foreach (var f in t.Value)
-                        foreach (var tn in f.Value)
-                            foreach (var n in tn.Value.Select(x => x.Find()).Where(x => x != v))
-                                toVisit.Add(n);
+                if (v.Rep?.Targets != null)
+                    foreach (var t in v.Rep.Targets)
+                        foreach (var f in t.Value)
+                            foreach (var tn in f.Value)
+                                foreach (var n in tn.Value.Select(x => x.Find()).Where(x => x != v))
+                                    toVisit.Add(n);
             }
 
             while (toVisit.Count > 0)
@@ -1601,7 +1602,7 @@ namespace DynAbs.Aliasing.CS
             // Step 3: Count
             totalNodes = (uint)vertices.Count;
             totalRegions = (uint)vertices.Count(x => x.IsMultiple);
-            totalEdges = (uint)vertices.Sum(x => x.Rep.Targets.Sum(y => y.Value.Sum(z => z.Value.Count)));
+            totalEdges = (uint)vertices.Sum(x => x.Rep?.Targets?.Sum(y => y.Value.Sum(z => z.Value.Count)) ?? 0);
         }
 
         #region StaticMode Extras
