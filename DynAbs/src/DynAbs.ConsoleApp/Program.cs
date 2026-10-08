@@ -16,6 +16,7 @@ class Program
     static HashSet<string> foldersToSkip = null;
     static HashSet<string> foldersToAnalyze = null;
     static HashSet<string> traces = null;
+    static bool? computeMemoryModelSize = null;
     static Orchestrator defaultOrchestrator = null;
     #endregion
 
@@ -40,6 +41,7 @@ class Program
         Globals.include_receiver_use_on_calls = opts.IncludeReceiverUseOnCalls;
         Globals.wrap_structs_calls = opts.WrapStructCalls;
         Globals.include_all_uses = opts.IncludeAllUses;
+        computeMemoryModelSize = opts.ComputeMemoryModelSize;
 
         var configurations = new List<string>();
         foreach (var file in opts.InputFiles)
@@ -121,6 +123,12 @@ class Program
         {
             userConfiguration.customization ??= new UserConfiguration.Customization();
             userConfiguration.customization.includeAllUses = Globals.include_all_uses.Value;
+        }
+
+        if (computeMemoryModelSize.HasValue)
+        {
+            userConfiguration.results ??= new UserConfiguration.Results();
+            userConfiguration.results.computeMemoryModelSize = computeMemoryModelSize.Value;
         }
 
         if (defaultOrchestrator == null || !useSameCompilation)
@@ -214,6 +222,11 @@ class Program
             HelpText = "Use the same instrumented version for all configuration files (this is helpful when running multiple inputs).",
             Default = false)]
         public bool UseSameCompilation { get; set; }
+
+        [Option('m', "computeMemoryModelSize",
+            Required = false,
+            HelpText = "Overrides the computeMemoryModelSize value of the configuration files (true/false).")]
+        public bool? ComputeMemoryModelSize { get; set; }
     }
 
     static void HandleParseError(IEnumerable<Error> errs)
