@@ -50,6 +50,7 @@ public class TraceAnalyzer
                 {
                     var Data = new ResultSummaryData(nextStmt.FileName, nextStmt.Line, _traceConsumer, 
                         _executedStatements, DateTime.Now.Subtract(Globals.start_time));
+                    Data.SlicedStatements = new HashSet<Stmt>();
                     SlicesSummaryData.Add(Data);
                     if (_traceConsumer.RemoveCriteria())
                         break; ;

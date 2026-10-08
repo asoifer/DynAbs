@@ -141,6 +141,7 @@ public class MainTraceConsumer
         if (_configuration.User.criteria.mode == UserConfiguration.Criteria.CriteriaMode.AtEnd)
         {
             var data = new ResultSummaryData(_configuration, _traceConsumer, _executedStatements, _dependencyGraph, _aliasingSolver, DateTime.Now.Subtract(Globals.start_time));
+            data.SlicedStatements = new HashSet<Stmt>();
             resultSummarydata = new List<ResultSummaryData>() { data };
         }
     }
