@@ -988,6 +988,10 @@ namespace DynAbs
             {
                 foreach (var term in scope.EntryPointVerticesDict)
                 {
+                    var ldVal = scope.LastDefDict.FirstOrDefault(x => x.Key.ToString() == term.Key).Value;
+                    if (ldVal?.IsTemporal == true)
+                        continue;
+
                     vertices.UnionWith(term.Value.VertexSet);
                 }
             }
@@ -1000,7 +1004,16 @@ namespace DynAbs
             // Step 3: Count
             totalNodes = (uint)vertices.Count;
             totalRegions = (uint)vertices.Count(x => x.VertexType == VertexType.Hub);
-            totalEdges = (uint)vertices.Sum(x => x.CommonVertex.Sum(y => y.Value.Count) + x.SigmaVertex.Count + x.LambdaVertex.Count);
+            totalEdges = 0;
+            // To avoid counting different edges to point to the same node
+            foreach (var v in vertices)
+            {
+                var otherVertices = SolverUtils.CreateReferenceComparedPTGHashSet();
+                otherVertices.UnionWith(v.CommonVertex.SelectMany(x => x.Value));
+                otherVertices.UnionWith(v.SigmaVertex);
+                otherVertices.UnionWith(v.LambdaVertex);
+                totalEdges += (uint)otherVertices.Count;
+            }
         }
 
         public int cantidad_compatibles = 0;

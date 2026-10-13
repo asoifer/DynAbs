@@ -1585,7 +1585,7 @@ namespace DynAbs.Aliasing.CS
             var vertices = CSUtils.CreateReferenceComparedPTGHashSet();
             foreach (var scope in LocalStack.Union(new Scope[] { Global }))
             {
-                foreach (var term in scope.PointsTo)
+                foreach (var term in scope.PointsTo.Where(x => !scope.LastDefs.ContainsKey(x.Key) || !scope.LastDefs[x.Key].IsTemporal))
                 {
                     foreach (var node in term.Value)
                     {
@@ -1602,7 +1602,22 @@ namespace DynAbs.Aliasing.CS
             // Step 3: Count
             totalNodes = (uint)vertices.Count;
             totalRegions = (uint)vertices.Count(x => x.IsMultiple);
-            totalEdges = (uint)vertices.Sum(x => x.Rep?.Targets?.Sum(y => y.Value.Sum(z => z.Value.Count)) ?? 0);
+            totalEdges = 0;
+            // To avoid counting different edges to point to the same node
+            foreach (var v in vertices)
+            {
+                var targets = v.Rep?.Targets;
+                if (targets != null)
+                {
+                    var otherVertices = CSUtils.CreateReferenceComparedPTGHashSet();
+                    foreach (var target in targets)
+                        foreach (var ftk in target.Value)
+                            foreach (var tk in ftk.Value)
+                                otherVertices.UnionWith(tk.Value);
+                    totalEdges += (uint)otherVertices.Count;
+
+                }
+            }
         }
 
         #region StaticMode Extras
