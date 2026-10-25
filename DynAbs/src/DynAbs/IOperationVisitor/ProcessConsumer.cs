@@ -796,7 +796,7 @@ namespace DynAbs
                     currentSymbol = ISlicerSymbol.Create(isConstructor ?
                         ((IMethodSymbol)declaredSymbol).ContainingType : ((IMethodSymbol)declaredSymbol).ReturnType);
                     arity = ((IMethodSymbol)declaredSymbol).Parameters.Count();
-                    returnsValue = isConstructor || !((IMethodSymbol)declaredSymbol).ReturnsVoid;
+                    returnsValue = isConstructor || !(((IMethodSymbol)declaredSymbol).ReturnsVoid || ((IMethodSymbol)declaredSymbol).ReturnType.MetadataName == "Task");
                 }
                 else
                 {
