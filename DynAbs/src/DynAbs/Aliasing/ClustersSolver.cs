@@ -256,6 +256,9 @@ namespace DynAbs.Aliasing.CS
             if ((lhsVertices == null || lhsVertices.Count == 0 || (lhsVertices.Count == 1 && lhsVertices.Single().Value.Count == 0)) && lhsTerm.IsGlobal)
                 throw new UninitializedTerm(lhsTerm.DiscardLast());
 
+            if (Globals.unify_weak_update_targets)
+                lhsVertices = UnifyWeakUpdateTargets(lhsVertices);
+
             // Strong update
             if (lhsTerm.Last != Field.SIGMA_OBJ &&
                 lhsVertices.Count == 1 &&
@@ -357,6 +360,9 @@ namespace DynAbs.Aliasing.CS
             var vertices = aPt(term.DiscardLast(), scope);
             if ((vertices == null || vertices.Count == 0 || (vertices.Count == 1 && vertices.Single().Value.Count == 0)) && term.IsGlobal)
                 throw new UninitializedTerm(term.DiscardLast());
+
+            if (Globals.unify_weak_update_targets)
+                vertices = UnifyWeakUpdateTargets(vertices);
 
             // Strong update
             if (term.Last != Field.SIGMA_OBJ &&
@@ -946,6 +952,41 @@ namespace DynAbs.Aliasing.CS
             return region;
         }
 
+        /// <summary>
+        /// Writes reaching fewer objects stay weak updates: merging is permanent, so it would turn later strong updates on those objects into weak ones
+        /// (in Olden BH, 5 objects per write), while thousands of objects per write make weak updates grow the model quadratically (Health, Voronoi).
+        /// </summary>
+        const int UnifyWeakUpdateThreshold = 16;
+
+        /// <summary>
+        /// A write through a term that may denote several objects updates all of them weakly, so they can no longer be told apart for that field.
+        /// When there are at least <see cref="UnifyWeakUpdateThreshold"/> of them, merging them into one cluster records the write once,
+        /// instead of adding the same targets and last definitions to each object.
+        /// </summary>
+        Dictionary<TypeKind, HashSet<PtgVertex>> UnifyWeakUpdateTargets(Dictionary<TypeKind, HashSet<PtgVertex>> vertices)
+        {
+            if (vertices == null)
+                return vertices;
+
+            var reps = CSUtils.CreateReferenceComparedPTGHashSet(vertices
+                .Where(x => !x.Key.Type.IsStruct)
+                .SelectMany(x => x.Value)
+                .Select(x => x.Find()));
+            if (reps.Count < UnifyWeakUpdateThreshold)
+                return vertices;
+
+            var first = reps.First();
+            foreach (var w in reps.Skip(1))
+                if (first.Find() != w.Find())
+                    AddLambdaLink(first, w);
+
+            var rep = first.Find();
+            var unified = new Dictionary<TypeKind, HashSet<PtgVertex>>();
+            foreach (var tv in vertices)
+                unified[tv.Key] = tv.Key.Type.IsStruct ? tv.Value : CSUtils.CreateReferenceComparedPTGHashSet(rep);
+            return unified;
+        }
+
         void AddLambdaLink(PtgVertex v, PtgVertex w)
         {
             PtgVertex child, parent;
@@ -974,8 +1015,10 @@ namespace DynAbs.Aliasing.CS
             }
 
             child.Parent = parent;
+            var objects = parent.Rep.Objects + child.Rep.Objects;
             parent.Rep.Union(child.Rep);
             parent.Rep.Single = false;
+            parent.Rep.Objects = objects;
             child.Rep = null;
         }
 
@@ -1010,6 +1053,7 @@ namespace DynAbs.Aliasing.CS
             parent.Rep.Single = false;
             var xRep = parent.Rep;
             var yRep = child.Rep;
+            var objects = xRep.Objects + yRep.Objects;
             child.Rep = null;
 
             if (Globals.optimize_types)
@@ -1028,6 +1072,7 @@ namespace DynAbs.Aliasing.CS
                 xRep.Union(yRep);
 
             parent.Rep = xRep;
+            parent.Rep.Objects = objects;
         }
         #endregion
 
@@ -1579,7 +1624,7 @@ namespace DynAbs.Aliasing.CS
                         d1[tk2.Key].UnionWith(tk2.Value);
         }
 
-        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges)
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges, out uint totalObjects)
         {
             // Step 1: Get all nodes pointed by all scopes
             var vertices = CSUtils.CreateReferenceComparedPTGHashSet();
@@ -1602,6 +1647,8 @@ namespace DynAbs.Aliasing.CS
             // Step 3: Count
             totalNodes = (uint)vertices.Count;
             totalRegions = (uint)vertices.Count(x => x.IsMultiple);
+            // Nodes are cluster representatives; objects also count the vertices merged into them.
+            totalObjects = (uint)CSUtils.CreateReferenceComparedPTGHashSet(vertices.Select(x => x.Find())).Sum(x => (long)x.Rep.Objects);
             totalEdges = 0;
             // To avoid counting different edges to point to the same node
             foreach (var v in vertices)

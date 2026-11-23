@@ -980,7 +980,7 @@ namespace DynAbs
 
         public virtual void SaveResults(string graphEvolutionFile, string internalProfileFile) { }
 
-        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges)
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges, out uint totalObjects)
         {
             // Step 1: Get all nodes pointed by all scopes
             var vertices = SolverUtils.CreateReferenceComparedPTGHashSet();
@@ -1003,6 +1003,7 @@ namespace DynAbs
 
             // Step 3: Count
             totalNodes = (uint)vertices.Count;
+            totalObjects = totalNodes;
             totalRegions = (uint)vertices.Count(x => x.VertexType == VertexType.Hub);
             totalEdges = 0;
             // To avoid counting different edges to point to the same node

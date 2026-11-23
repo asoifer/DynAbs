@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using DynAbs.Tracing;
 
 namespace DynAbs;
@@ -23,6 +24,8 @@ public class ResultSummaryData
     public uint MemoryModelVerticesCount { get; }
     public uint MemoryModelRegionsCount { get; }
     public uint MemoryModelEdgesCount { get; }
+    public uint MemoryModelObjectsCount { get; }
+    public double MemoryModelSizeElapsedMilliseconds { get; }
     #endregion
 
     #region Constructors
@@ -81,12 +84,18 @@ public class ResultSummaryData
         MemoryModelVerticesCount = 0;
         MemoryModelRegionsCount = 0;
         MemoryModelEdgesCount = 0;
+        MemoryModelObjectsCount = 0;
+        MemoryModelSizeElapsedMilliseconds = 0;
         if (userConfiguration?.ComputeMemoryModelSize == true && aliasingSolver != null)
         {
-            aliasingSolver.MeasureMemoryModelSize(out var mmTotalNodes, out var mmTotalRegions, out var mmTotalEdges);
+            var stopwatch = Stopwatch.StartNew();
+            aliasingSolver.MeasureMemoryModelSize(out var mmTotalNodes, out var mmTotalRegions, out var mmTotalEdges, out var mmTotalObjects);
+            stopwatch.Stop();
+            MemoryModelSizeElapsedMilliseconds = stopwatch.Elapsed.TotalMilliseconds;
             MemoryModelVerticesCount = mmTotalNodes;
             MemoryModelRegionsCount = mmTotalRegions;
             MemoryModelEdgesCount = mmTotalEdges;
+            MemoryModelObjectsCount = mmTotalObjects;
         }
     }
     #endregion

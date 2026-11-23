@@ -235,6 +235,8 @@ public class Orchestrator
             var mmVertexCounter = data.MemoryModelVerticesCount;
             var mmRegionCounter = data.MemoryModelRegionsCount;
             var mmEdgeCounter = data.MemoryModelEdgesCount;
+            var mmElapsedMilliseconds = data.MemoryModelSizeElapsedMilliseconds;
+            var mmObjectCounter = data.MemoryModelObjectsCount;
 
             if (printResult)
             {     
@@ -251,14 +253,16 @@ public class Orchestrator
                 Console.WriteLine("#MM Singles: " + (mmVertexCounter - mmRegionCounter));
                 Console.WriteLine("#MM Regions: " + mmRegionCounter);
                 Console.WriteLine("#MM Edges: " + mmEdgeCounter);
+                Console.WriteLine("MM size measurement time (ms): " + mmElapsedMilliseconds);
+                Console.WriteLine("#MM Objects (including merged): " + mmObjectCounter);
                 Console.WriteLine("----------------------------");
             }
 
-            // Nombre|Inputs|#Stmt|#UniqueStmt|#Slice|T. Instr|T. traza|T. Ejecución|Size Traza|Traza Total|Traza Salteada|%Salteado|DDG Vertices|DDG Edges|MM Vertices|MM Regions|MM Edges
+            // Nombre|Inputs|#Stmt|#UniqueStmt|#Slice|T. Instr|T. traza|T. Ejecución|Size Traza|Traza Total|Traza Salteada|%Salteado|DDG Vertices|DDG Edges|MM Vertices|MM Regions|MM Edges|MM Size T. (ms)|MM Objects
             if (!string.IsNullOrWhiteSpace(Configuration.User.results.summaryResultFile))
                 System.IO.File.AppendAllLines(string.Format(Configuration.User.results.summaryResultFile, instanceNumber),
                     new string[] { $"{programName}|{arguments}|{totalStatementsLines}|{distinctStatementLines}|{slicedStatements}|{TotalSecondsInstrumentation}|" +
-                                        $"{localGenerationTraceTime}|{executionSeconds}|{traceSize}|{totalTraceLines}|{skippedTrace}|{skippedLinesPercent}|{ddgVertexCounter}|{ddgEdgeCounter}|{mmVertexCounter}|{mmRegionCounter}|{mmEdgeCounter}" });
+                                        $"{localGenerationTraceTime}|{executionSeconds}|{traceSize}|{totalTraceLines}|{skippedTrace}|{skippedLinesPercent}|{ddgVertexCounter}|{ddgEdgeCounter}|{mmVertexCounter}|{mmRegionCounter}|{mmEdgeCounter}|{mmElapsedMilliseconds}|{mmObjectCounter}" });
         }
         #endregion
 

@@ -180,6 +180,6 @@ namespace DynAbs
         public void MultipleAssign(Term term1, List<Term> terms) => throw new NotImplementedException();
         public void WeakAssign(Term term1, Term term2) => throw new NotImplementedException();
 
-        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges) => solvers.First().MeasureMemoryModelSize(out totalNodes, out totalRegions, out totalEdges);
+        public void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges, out uint totalObjects) => solvers.First().MeasureMemoryModelSize(out totalNodes, out totalRegions, out totalEdges, out totalObjects);
     }
 }

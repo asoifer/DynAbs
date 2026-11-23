@@ -17,6 +17,7 @@ class Program
     static HashSet<string> foldersToAnalyze = null;
     static HashSet<string> traces = null;
     static bool? computeMemoryModelSize = null;
+    static bool? copyGlobalAssignments = null;
     static Orchestrator defaultOrchestrator = null;
     #endregion
 
@@ -42,6 +43,8 @@ class Program
         Globals.wrap_structs_calls = opts.WrapStructCalls;
         Globals.include_all_uses = opts.IncludeAllUses;
         computeMemoryModelSize = opts.ComputeMemoryModelSize;
+        copyGlobalAssignments = opts.CopyGlobalAssignments;
+        Globals.unify_weak_update_targets = opts.UnifyWeakUpdateTargets ?? true;
 
         var configurations = new List<string>();
         foreach (var file in opts.InputFiles)
@@ -129,6 +132,12 @@ class Program
         {
             userConfiguration.results ??= new UserConfiguration.Results();
             userConfiguration.results.computeMemoryModelSize = computeMemoryModelSize.Value;
+        }
+
+        if (copyGlobalAssignments.HasValue)
+        {
+            userConfiguration.customization ??= new UserConfiguration.Customization();
+            userConfiguration.customization.copyGlobalAssignments = copyGlobalAssignments.Value;
         }
 
         if (defaultOrchestrator == null || !useSameCompilation)
@@ -227,6 +236,16 @@ class Program
             Required = false,
             HelpText = "Overrides the computeMemoryModelSize value of the configuration files (true/false).")]
         public bool? ComputeMemoryModelSize { get; set; }
+
+        [Option('g', "copyGlobalAssignments",
+            Required = false,
+            HelpText = "Overrides the copyGlobalAssignments value of the configuration files (true/false).")]
+        public bool? CopyGlobalAssignments { get; set; }
+
+        [Option('x', "unifyWeakUpdateTargets",
+            Required = false,
+            HelpText = "Merges into one cluster the objects of a write that may denote many of them (Clusters memory model). Enabled by default; pass false to disable it.")]
+        public bool? UnifyWeakUpdateTargets { get; set; }
     }
 
     static void HandleParseError(IEnumerable<Error> errs)

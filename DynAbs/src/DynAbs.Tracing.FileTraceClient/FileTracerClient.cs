@@ -1,63 +1,56 @@
 ﻿using DynAbs.Tracing;
-using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
-using System.IO.Pipes;
-using System.Linq;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace Tracer
 {
     internal class FileTracerClient : ITracerClient
     {
+        const int PackageSize = 1500;
+        // Bounds memory if the writer falls behind; Add blocks the traced program instead of reordering packages.
+        const int MaxPendingPackages = 8;
+
+        static long counter = 1;
         static int initial_thread_id;
 
-        static StringBuilder[] hub;
-        static int index;
-        int line_count, package_size;
+        static StringBuilder current;
+        static int line_count;
+        static BlockingCollection<StringBuilder> pending;
 
         static FileStream fs;
 
         Thread writer;
         static Thread client;
 
-        static Object writing, dispatched;
-
         public void Initialize()
         {
-            initial_thread_id = System.Threading.Thread.CurrentThread.ManagedThreadId;
+            initial_thread_id = Thread.CurrentThread.ManagedThreadId;
 
-            hub = new StringBuilder[2] { new StringBuilder(), new StringBuilder() };
-            index = 0;
+            current = new StringBuilder();
             line_count = 0;
-            package_size = 1500;
+            pending = new BlockingCollection<StringBuilder>(new ConcurrentQueue<StringBuilder>(), MaxPendingPackages);
 
             fs = new FileStream(TracerGlobals.FileTraceInput, FileMode.Create, FileAccess.Write, FileShare.Write, 4096);
 
             writer = new Thread(TraceWriter);
             client = Thread.CurrentThread;
-
-            writing = false;
-            dispatched = false;
             writer.Start();
         }
 
         public void Trace(int fileId, int traceType, int spanStart, int spanEnd)
         {
-            if (initial_thread_id == System.Threading.Thread.CurrentThread.ManagedThreadId)
+            if (initial_thread_id == Thread.CurrentThread.ManagedThreadId)
             {
                 string separator = ",";
-                string trace = fileId + separator + traceType + separator + spanStart + separator + spanEnd;
+                string trace = fileId + separator + traceType + separator + spanStart + separator + spanEnd + separator + (counter++);
 
-                hub[index].AppendLine(trace);
-                if (++line_count == package_size)
+                current.AppendLine(trace);
+                if (++line_count == PackageSize)
                 {
-                    while ((bool)writing) { }
-
-                    index = (index + 1) % 2;
-                    lock (dispatched) { dispatched = true; }
+                    pending.Add(current);
+                    current = new StringBuilder();
                     line_count = 0;
                 }
             }
@@ -65,35 +58,27 @@ namespace Tracer
 
         static void TraceWriter()
         {
+            StringBuilder package;
             while (client.IsAlive)
             {
-                if ((bool)dispatched)
-                {
-                    lock (writing) { writing = true; }
-                    lock (dispatched) { dispatched = false; };
-                    write();
-                }
+                if (pending.TryTake(out package, 50))
+                    write(package);
             }
 
-            /* Si la cantidad total de líneas de traza no es un múltiplo del tamaño de paquete,
-             * una vez finalizada la ejecucuion del programa cliente quedan líneas que nunca terminan siendo despachadas
+            /* Una vez finalizado el programa cliente, se escriben los paquetes pendientes en orden FIFO
+             * y por último el paquete incompleto que nunca llegó a despacharse
              */
-            index = (index + 1) % 2;
-            write();
+            while (pending.TryTake(out package))
+                write(package);
+            write(current);
             fs.Close();
         }
 
-        static void write()
+        static void write(StringBuilder package)
         {
-            int write_index = (index + 1) % 2;
-
-            string content = hub[write_index].ToString();
-            var bytes = Encoding.UTF8.GetBytes(content);
+            var bytes = Encoding.UTF8.GetBytes(package.ToString());
             if (bytes.Length > 0)
                 fs.Write(bytes, 0, bytes.Length);
-
-            hub[write_index].Clear();
-            lock (writing) { writing = false; }
         }
     }
 }

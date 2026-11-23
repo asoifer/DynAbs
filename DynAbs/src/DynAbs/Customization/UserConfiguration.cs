@@ -106,6 +106,9 @@ namespace DynAbs
             public bool skipTraceEnabled { get; set; }
             public MemoryModelKind memoryModel { get; set; }
             public DependencyGraphKind dependencyGraph { get; set; }
+            // Copies the points-to set of a global on assignment so later writes through the copy don't reach the global;
+            // reduces false positives but is unsound when the copy aliases the global (e.g. Olden MST).
+            public bool copyGlobalAssignments { get; set; }
         }
 
         public enum MemoryModelKind

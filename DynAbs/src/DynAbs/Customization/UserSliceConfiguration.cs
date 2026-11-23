@@ -35,6 +35,7 @@ public class UserSliceConfiguration
         if (userConfiguration.FoldersToSkip != null)
             FoldersToSkip = new HashSet<string>(userConfiguration.FoldersToSkip.Select(x => x.name));
 
+        Globals.copy_global_assignments = userConfiguration.customization?.copyGlobalAssignments ?? false;
         Globals.generate_dgs = !string.IsNullOrWhiteSpace(userConfiguration?.results?.sliceDependenciesGraphFolder ?? "");
     }
 }

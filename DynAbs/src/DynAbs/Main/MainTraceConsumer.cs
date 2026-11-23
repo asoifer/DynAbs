@@ -37,6 +37,8 @@ public class MainTraceConsumer
         Globals.InstrumentationResult = instrumentationResult;
         Globals.TraceSkippedGetModeCallback = 0;
         Globals.TraceSkippedGetModeBody = 0;
+        Globals.TraceSkippedStmtGetModeCallback = 0;
+        Globals.TraceSkippedStmtGetModeBody = 0;
         IDependencyGraph _tempDependencyGraph = 
             _configuration.User?.customization?.dependencyGraph == UserConfiguration.DependencyGraphKind.SubsumedDependencyGraph ?
                 new SubsumedDependencyGraph() : new CustomDynamicDependencyGraph();
