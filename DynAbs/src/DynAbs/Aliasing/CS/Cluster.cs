@@ -17,6 +17,8 @@ namespace DynAbs.Aliasing.CS
         public Dictionary<TypeKind, Dictionary<Field, Dictionary<TypeKind, HashSet<PtgVertex>>>> Targets
             = new Dictionary<TypeKind, Dictionary<Field, Dictionary<TypeKind, HashSet<PtgVertex>>>>();
         public bool Single = true;
+        // Objects (vertices) merged into this cluster.
+        public uint Objects = 1;
 
         public HashSet<TypeKind> TypeKinds = new HashSet<TypeKind>();
 

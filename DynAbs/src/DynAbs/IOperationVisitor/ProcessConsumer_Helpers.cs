@@ -409,9 +409,17 @@ namespace DynAbs
                         queue.Enqueue(skippedStmt);
 
                     if (isCallback)
+                    {
                         Globals.TraceSkippedGetModeCallback++;
+                        if (skippedStmt.TraceType == TraceType.SimpleStatement)
+                            Globals.TraceSkippedStmtGetModeCallback++;
+                    }
                     else
+                    {
                         Globals.TraceSkippedGetModeBody++;
+                        if (skippedStmt.TraceType == TraceType.SimpleStatement)
+                            Globals.TraceSkippedStmtGetModeBody++;
+                    }
 
                     nextStmt = ObserveNextStatement();
 

@@ -23,6 +23,7 @@ namespace DynAbs
         public Term _returnObject { get; set; }
         public Term _returnExceptionTerm { get; set; }
         public Term ExceptionTerm { get; set; }
+        bool _lastWaitForEndThrew;
         public Term PatternOperationReceiver { get; set; }
         public bool _setReturn { get; set; }
         public bool _sliceCriteriaReached { get; set; }
@@ -255,7 +256,7 @@ namespace DynAbs
             new Tuple<int, int, int>(201, 1329, 1342),
             new Tuple<int, int, int>(10319, 43910, 43937),
             new Tuple<int, int, int>(10319, 45973, 45995),
-            new Tuple<int, int, int>(10319, 57617, 57644),
+            new Tuple<int, int, int>(10319, 57617, 57644)
         };
 
         static List<Tuple<int, int, int>> convertionsWithCallbacks = new List<Tuple<int, int, int>>()

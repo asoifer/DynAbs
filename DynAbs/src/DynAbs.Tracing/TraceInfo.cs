@@ -17,6 +17,8 @@ namespace DynAbs.Tracing
         public int SpanEnd { get; set; }
         [ProtoMember(4)]
         public TraceType TraceType { get; set; }
+        [ProtoMember(5)]
+        public int Counter { get; set; }
 
         public override bool Equals(object obj)
         {

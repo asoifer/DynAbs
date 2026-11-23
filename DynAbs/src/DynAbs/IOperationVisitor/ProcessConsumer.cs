@@ -394,12 +394,35 @@ namespace DynAbs
             if (!Globals.wrap_structs_calls && symbol != null && symbol is IMethodSymbol && ((IMethodSymbol)symbol).MethodKind != MethodKind.Constructor && ((IMethodSymbol)symbol).CustomStructReceiver() && !isException)
                 returnedTerms = new List<Term>();
             else
+            {
+                _lastWaitForEndThrew = false;
                 returnedTerms = WaitForEnd(thisStmt.CSharpSyntaxNode, dependentTerms, symbol, methodName, TraceType.EndInvocation);
+            }
+
+            var threw = _lastWaitForEndThrew;
+            _lastWaitForEndThrew = false;
 
             // XXX: returnedTerms have to go with parameters... (for now)
             if (returnedTerms.Count > 0)
                 argumentList.AddRange(returnedTerms);
+
+            Term exceptionTerm = null;
+            if (threw)
+            {
+                exceptionTerm = _termFactory.Create(thisStmt.CSharpSyntaxNode, ISlicerSymbol.CreateObjectSymbol(), false, TermFactory.GetFreshName());
+                if (hub == null)
+                    hub = exceptionTerm;
+            }
+
             _broker.HandleNonInstrumentedMethod(argumentList, @this, returnedTerms, hub, symbol, methodName);
+
+            // The exception depends on the same locations as the effects of the call, so the catch that receives it inherits them.
+            if (threw)
+            {
+                if (hub != exceptionTerm)
+                    _broker.Assign(exceptionTerm, hub);
+                ExceptionTerm = exceptionTerm;
+            }
         }
 
         void CheckForSetCallbacks(Term def, Term use, List<Term> dependentTerms, IPropertySymbol propertySymbol)
@@ -869,6 +892,12 @@ namespace DynAbs
 
             if (enterStaticLoop)
                 _broker.ExitStaticMode();
+
+            // The non-instrumented code threw: the trace goes on with a catch or finally instead of the end of the call.
+            _lastWaitForEndThrew = nextStmt != null &&
+                (nextStmt.TraceType == TraceType.EnterCatch ||
+                nextStmt.TraceType == TraceType.EnterFinalCatch ||
+                nextStmt.TraceType == TraceType.EnterFinally);
 
             if (nextStmt != null)
             {

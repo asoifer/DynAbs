@@ -47,6 +47,6 @@ namespace DynAbs
 
         void SaveResults(string graphEvolutionFile, string internalProfileFile);
 
-        void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges);
+        void MeasureMemoryModelSize(out uint totalNodes, out uint totalRegions, out uint totalEdges, out uint totalObjects);
     }
 }

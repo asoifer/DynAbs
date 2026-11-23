@@ -136,7 +136,7 @@ namespace DynAbs
         {
             if (traceInfo == null)
                 return null;
-            var ret = new Stmt() { FileId = traceInfo.FileId, SpanStart = traceInfo.SpanStart, SpanEnd = traceInfo.SpanEnd };
+            var ret = new Stmt() { FileId = traceInfo.FileId, SpanStart = traceInfo.SpanStart, SpanEnd = traceInfo.SpanEnd, Counter = traceInfo.Counter };
             ret.Line = -1;
             ret.TraceType = traceInfo.TraceType;
             return ret;

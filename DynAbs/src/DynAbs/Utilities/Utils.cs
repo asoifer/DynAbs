@@ -451,7 +451,7 @@ namespace DynAbs
 
         public static void SaveSkippedFilesInfo(UserSliceConfiguration userSliceConfiguration, string path, string fileTraceInputPath, InstrumentationResult instrumentationResult, Solution solution)
         {
-            if (string.IsNullOrWhiteSpace(path) || !DynAbs.Globals.skip_trace_enabled)
+            if (string.IsNullOrWhiteSpace(path))
                 return;
 
             var counterDictionary = new Dictionary<int, int>();
@@ -491,8 +491,8 @@ namespace DynAbs
                 dictFolder[folder] = count;
             }
 
-            var totalSkippedLines = userSliceConfiguration.FilesToSkip.Sum(x => counterDictionary.ContainsKey(x) ? counterDictionary[x] : 0);
-            var totalExcludedExecuted = userSliceConfiguration.FilesToSkip.Count(x => counterDictionary.ContainsKey(x));
+            var totalSkippedLines = userSliceConfiguration.FilesToSkip?.Sum(x => counterDictionary.ContainsKey(x) ? counterDictionary[x] : 0) ?? 0;
+            var totalExcludedExecuted = userSliceConfiguration.FilesToSkip?.Count(x => counterDictionary.ContainsKey(x)) ?? 0;
             var percentageSkippedLinesExcluded = Math.Round((double)totalSkippedLines * (double)100 / (double)total, 2);
             var percentageExecutedExcluded = Math.Round((double)totalExcludedExecuted * (double)100 / (double)counterDictionary.Count, 2);
 
@@ -505,6 +505,8 @@ namespace DynAbs
             sb.AppendLine($"Total executed files excluded (percentage): {percentageExecutedExcluded}");
             sb.AppendLine($"Skipped via get mode (callback): {Globals.TraceSkippedGetModeCallback}");
             sb.AppendLine($"Skipped via get mode (body): {Globals.TraceSkippedGetModeBody}");
+            sb.AppendLine($"Skipped stmt. via get mode (callback): {Globals.TraceSkippedStmtGetModeCallback}");
+            sb.AppendLine($"Skipped stmt. via get mode (body): {Globals.TraceSkippedStmtGetModeBody}");
             sb.AppendLine($"Excluded folders: ");
             if (userSliceConfiguration.FoldersToSkip != null)
                 foreach (var excludedFolder in userSliceConfiguration.FoldersToSkip)

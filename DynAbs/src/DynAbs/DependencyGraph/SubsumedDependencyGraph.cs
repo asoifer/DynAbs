@@ -22,6 +22,8 @@ class SubsumedDependencyGraph : IDependencyGraph
     Dictionary<uint, ISet<Stmt>> reachableStmts = new Dictionary<uint, ISet<Stmt>>();
     // Given a statement, we get those vertices which represent it on the graph
     Dictionary<Stmt, ISet<uint>> stmtToRepresentingVertices = new Dictionary<Stmt, ISet<uint>>();
+    // Given a vertex, the statement it was created for (vertices reused by other statements keep their original one)
+    Dictionary<uint, Stmt> vertexOwner = new Dictionary<uint, Stmt>();
 
     // 1 is for EXTERNAL, nextId() begins in 2.
     // External is defined in DependencyGraphStmtDescriptor.
@@ -65,11 +67,13 @@ class SubsumedDependencyGraph : IDependencyGraph
         // puede utilizar SingleOrDefault en lugar de FirstOrDefault
         // Aclaración: Si un vértice depende de un representativo no saltaría acá porque salta en el subsume y no se agrega. 
         // Por lo tanto: Si un vértice depende de un representativo, la comparación tendrá que ser con la unión de los ejes de salida del grafo.
+        // Equal out-edges only imply equal reachable statements when x was created for this statement: a vertex
+        // reused from another statement also reaches that statement, which the new occurrence may not depend on.
         var committingVertex = stmtToRepresentingVertices[stmtBeingTreated]
             .FirstOrDefault(x =>
                 (dependenciesBeingAdded.Contains(x) ?
                  dependenciesBeingAdded.SetEquals(graph.OutEdges(x).Select(y => y.Target).Union(Enumerable.Repeat(x, 1))) :
-                (dependenciesBeingAdded.SetEquals(graph.OutEdges(x).Select(y => y.Target)))));
+                (stmtBeingTreated.Equals(vertexOwner[x]) && dependenciesBeingAdded.SetEquals(graph.OutEdges(x).Select(y => y.Target)))));
 
         if (committingVertex == 0)
         {
@@ -101,6 +105,7 @@ class SubsumedDependencyGraph : IDependencyGraph
             var name = dgStmtDescriptor.VertexNameForStmt(stmtBeingTreated);
             committingVertex = nextId();
             vtxIdToName.Add(committingVertex, name);
+            vertexOwner.Add(committingVertex, stmtBeingTreated);
 
             // Actualizamos la estructura de datos indicando que nuestro vértice representa a todos estos statements
             var reachableStmtsFromPotentialNewVertex = new HashSet<Stmt>() { stmtBeingTreated };

@@ -2441,9 +2441,11 @@ namespace DynAbs
             var hasGetAccesor = (!forSet) && HasAccesor(operation.Property.Name, typesDictionary, out isSetAccessor, out accessorStmt) && !isSetAccessor;
             if (hasGetAccesor && 
                 Globals.get_mode_skip_get_body_trace && 
-                !operation.Property.GetMethod.ReceiverType.CustomIsStruct() && 
-                operation.Property.GetMethod.ReceiverType.ContainingAssembly.Name == Globals.core_assembly_name &&
-                accessorStmt.FileId < 1000)
+                !operation.Property.GetMethod.ReceiverType.CustomIsStruct() &&                 
+                (// Roslyn
+                (operation.Property.GetMethod.ReceiverType.ContainingAssembly.Name == Globals.core_assembly_name_roslyn && accessorStmt.FileId < 1000)||
+                // PowerShell
+                (operation.Property.GetMethod.ReceiverType.ContainingAssembly.Name == Globals.core_assembly_name_powershell && accessorStmt.FileId >= 1000 && accessorStmt.FileId < 2000 && !Globals.powershell_exceptions.Contains(accessorStmt.FileId))))
             {
                 var isSkipException = skipGetSkippingException.Any(x =>
                     ((_originalStatement != null && x.Item1 == _originalStatement.FileId) || (_originalStatement == null && x.Item1 == _currentFileId)) &&

@@ -43,6 +43,7 @@ namespace DynAbs
                 line = value;
             }
         }
+        public int Counter { get; set; }
 
         private CSharpSyntaxNode syntaxNode;
         public CSharpSyntaxNode CSharpSyntaxNode

@@ -34,7 +34,8 @@ namespace DynAbs.Tracing
                 var traceType = (TraceType)Convert.ToInt32(data[1]);
                 var spanStart = Convert.ToInt32(data[2]);
                 var spanEnd = Convert.ToInt32(data[3]);
-                TraceInfo info = new TraceInfo() { FileId = fileId, TraceType = traceType, SpanStart = spanStart, SpanEnd = spanEnd };
+                var counter = data.Length > 4 ? Convert.ToInt32(data[4]) : 0;
+                TraceInfo info = new TraceInfo() { FileId = fileId, TraceType = traceType, SpanStart = spanStart, SpanEnd = spanEnd, Counter = counter };
                 Receiver.TraceReceived(info);
             }
             Receiver.StopReceiving();
